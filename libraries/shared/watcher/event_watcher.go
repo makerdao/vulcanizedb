@@ -75,19 +75,28 @@ func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTra
 
 // Extracts and delegates watched log events.
 func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
+	delegateDoneChan := make(chan bool)
 	delegateErrsChan := make(chan error)
+	extractDoneChan := make(chan bool)
 	extractErrsChan := make(chan error)
+
+	defer close(delegateDoneChan)
 	defer close(delegateErrsChan)
+	defer close(extractDoneChan)
 	defer close(extractErrsChan)
 
-	go watcher.extractLogs(recheckHeaders, extractErrsChan)
-	go watcher.delegateLogs(delegateErrsChan)
+	go watcher.extractLogs(recheckHeaders, extractDoneChan, extractErrsChan)
+	go watcher.delegateLogs(delegateDoneChan, delegateErrsChan)
 
 	for {
 		select {
+		case <-delegateDoneChan:
+			go watcher.delegateLogs(delegateDoneChan, delegateErrsChan)
 		case delegateErr := <-delegateErrsChan:
 			logrus.Errorf("error delegating logs in event watcher: %s", delegateErr.Error())
 			return delegateErr
+		case <-extractDoneChan:
+			go watcher.extractLogs(recheckHeaders, extractDoneChan, extractErrsChan)
 		case extractErr := <-extractErrsChan:
 			logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
 			return extractErr
@@ -95,7 +104,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 	}
 }
 
-func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
+func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, done chan bool, errs chan error) {
 	err := watcher.LogExtractor.ExtractLogs(recheckHeaders)
 	if err != nil && err != logs.ErrNoUncheckedHeaders {
 		errs <- err
@@ -104,13 +113,13 @@ func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExe
 
 	if err == logs.ErrNoUncheckedHeaders {
 		time.Sleep(NoNewDataPause)
-		watcher.extractLogs(recheckHeaders, errs)
-	} else {
-		watcher.extractLogs(recheckHeaders, errs)
 	}
+
+	done <- true
+	return
 }
 
-func (watcher *EventWatcher) delegateLogs(errs chan error) {
+func (watcher *EventWatcher) delegateLogs(done chan bool, errs chan error) {
 	err := watcher.LogDelegator.DelegateLogs()
 	if err != nil && err != logs.ErrNoLogs {
 		errs <- err
@@ -119,8 +128,8 @@ func (watcher *EventWatcher) delegateLogs(errs chan error) {
 
 	if err == logs.ErrNoLogs {
 		time.Sleep(NoNewDataPause)
-		watcher.delegateLogs(errs)
-	} else {
-		watcher.delegateLogs(errs)
 	}
+
+	done <- true
+	return
 }
