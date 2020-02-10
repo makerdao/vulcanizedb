@@ -25,6 +25,7 @@ import (
 type StorageTransformer interface {
 	Execute(diff types.PersistedDiff) error
 	KeccakContractAddress() common.Hash
+	GetContractAddress() common.Address
 }
 
 type StorageTransformerInitializer func(db *postgres.DB) StorageTransformer

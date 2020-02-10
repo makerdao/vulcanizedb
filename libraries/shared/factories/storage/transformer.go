@@ -25,12 +25,17 @@ import (
 )
 
 type Transformer struct {
+	Address           common.Address
 	HashedAddress     common.Hash
 	StorageKeysLookup KeysLookup
 	Repository        Repository
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {
+func (transformer Transformer) GetContractAddress() common.Address {
+	return transformer.Address
+}
+
+func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer{
 	transformer.StorageKeysLookup.SetDB(db)
 	transformer.Repository.SetDB(db)
 	return transformer
