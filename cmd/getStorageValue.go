@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"math/big"
@@ -120,7 +121,10 @@ func (r *StorageValueCommandRunner) persistStorageValues(address common.Address,
 
 		_, createDiffErr := r.storageDiffRepo.CreateStorageDiff(diff)
 		if createDiffErr != nil {
-			fmt.Println(createDiffErr)
+			if createDiffErr == sql.ErrNoRows {
+				return nil
+
+			}
 			return createDiffErr
 		}
 	}

@@ -152,6 +152,44 @@ var _ = Describe("getStorageValue Command", func() {
 		Expect(dbResults).To(ConsistOf(expectedResultOne, expectedResultTwo))
 	})
 
+	It("ignore duplicate diffs", func() {
+		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
+		value1 := common.BytesToHash([]byte{7, 8, 9})
+		//Simulating requesting the same key from the blockChain twice
+		bc.SetStorageValuesToReturn([][]byte{value1[:], value1[:]})
+
+		initializers := []transformer.StorageTransformerInitializer{initializerOne}
+		runner = cmd.NewStorageValueCommandRunner(&bc, db, initializers, blockNumber)
+		runnerErr := runner.Run()
+		Expect(runnerErr).NotTo(HaveOccurred())
+
+		var dbResults []dbDiffResult
+		getDbResultsErr := db.Select(&dbResults, `SELECT block_height, block_hash, hashed_address, storage_key, storage_value FROM public.storage_diff`)
+		Expect(getDbResultsErr).NotTo(HaveOccurred())
+
+		trimmedHeaderHash := strings.TrimPrefix(fakeHeader.Hash, "0x")
+		headerHashBytes := common.Hex2Bytes(trimmedHeaderHash)
+		expectedDiffResult := dbDiffResult{
+			BlockHeight:   int(blockNumber),
+			BlockHash:     headerHashBytes,
+			HashedAddress: crypto.Keccak256Hash(addressOne[:]).Bytes(),
+			StorageKey:    keyOne[:],
+			StorageValue:  value1[:],
+		}
+		Expect(len(dbResults)).To(Equal(1))
+		Expect(dbResults).To(ConsistOf(expectedDiffResult))
+
+		//Run the command again with the same storage info
+		runnerErrTwo := runner.Run()
+		Expect(runnerErrTwo).NotTo(HaveOccurred())
+
+		var dbResultsTwo []dbDiffResult
+		getDbResultsErrTwo := db.Select(&dbResultsTwo, `SELECT block_height, block_hash, hashed_address, storage_key, storage_value FROM public.storage_diff`)
+		Expect(getDbResultsErrTwo).NotTo(HaveOccurred())
+		Expect(len(dbResults)).To(Equal(1))
+		Expect(dbResults).To(ConsistOf(expectedDiffResult))
+	})
+
 	It("returns an error if a header for the given block cannot be retrieved", func() {
 		runner := cmd.NewStorageValueCommandRunner(&bc, db, initializers, blockNumber+1)
 		runnerErr := runner.Run()
