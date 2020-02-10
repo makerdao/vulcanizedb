@@ -70,7 +70,7 @@ var _ = Describe("getStorageValue Command", func() {
 		_, insertHeaderErr := headerRepository.CreateOrUpdateHeader(fakeHeader)
 		Expect(insertHeaderErr).NotTo(HaveOccurred())
 
-		runner = cmd.NewStorageValueCommandRunner(&bc, db, initializers)
+		runner = cmd.NewStorageValueCommandRunner(&bc, db, initializers, blockNumber)
 	})
 
 	AfterEach(func() {
@@ -78,7 +78,7 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("gets the storage keys for each transformer", func() {
-		runnerErr := runner.Run(blockNumber)
+		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
@@ -89,7 +89,7 @@ var _ = Describe("getStorageValue Command", func() {
 		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
 		keysLookupTwo.SetKeysToReturn([]common.Hash{keyTwo})
 
-		runnerErr := runner.Run(blockNumber)
+		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(keysLookupTwo.GetKeysCalled).To(BeTrue())
@@ -102,7 +102,7 @@ var _ = Describe("getStorageValue Command", func() {
 	It("returns an error if getting the keys from the KeysLookup fails", func() {
 		keysLookupTwo.SetGetKeysError(fakes.FakeError)
 
-		runnerErr := runner.Run(blockNumber)
+		runnerErr := runner.Run()
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(fakes.FakeError))
@@ -112,7 +112,7 @@ var _ = Describe("getStorageValue Command", func() {
 		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
 		bc.SetGetStorageAtError(fakes.FakeError)
 
-		runnerErr := runner.Run(blockNumber)
+		runnerErr := runner.Run()
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(fakes.FakeError))
@@ -125,7 +125,7 @@ var _ = Describe("getStorageValue Command", func() {
 		value2 := common.BytesToHash([]byte{10, 11, 12})
 		bc.SetStorageValuesToReturn([][]byte{value1[:], value2[:]})
 
-		runnerErr := runner.Run(blockNumber)
+		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 
 		var dbResults []dbDiffResult
@@ -153,7 +153,8 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("returns an error if a header for the given block cannot be retrieved", func() {
-		runnerErr := runner.Run(blockNumber+1)
+		runner := cmd.NewStorageValueCommandRunner(&bc, db, initializers, blockNumber+1)
+		runnerErr := runner.Run()
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(sql.ErrNoRows))
 	})

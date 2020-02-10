@@ -58,41 +58,43 @@ func getStorageAt(blockNumber int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	storageInitializers := exportTransformers()
-	commandRunner := NewStorageValueCommandRunner(blockChain, &db, storageInitializers)
-	return commandRunner.Run(blockNumber)
+	commandRunner := NewStorageValueCommandRunner(blockChain, &db, storageInitializers, blockNumber)
+	return commandRunner.Run()
 }
 
-func NewStorageValueCommandRunner(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer) StorageValueCommandRunner{
+func NewStorageValueCommandRunner(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer, blockNumber int64) StorageValueCommandRunner {
 	return StorageValueCommandRunner{
-		bc:      bc,
-		db: db,
+		bc:              bc,
+		db:              db,
 		headerRepo:      repositories.NewHeaderRepository(db),
 		storageDiffRepo: storage2.NewDiffRepository(db),
 		initializers:    initializers,
+		blockNumber:     blockNumber,
 	}
 }
 
-type StorageValueCommandRunner struct{
-	bc core.BlockChain
-	db *postgres.DB
-	headerRepo repositories.HeaderRepository
+type StorageValueCommandRunner struct {
+	bc              core.BlockChain
+	db              *postgres.DB
+	headerRepo      repositories.HeaderRepository
 	storageDiffRepo storage2.DiffRepository
-	initializers []transformer.StorageTransformerInitializer
+	initializers    []transformer.StorageTransformerInitializer
+	blockNumber     int64
 }
 
-func (r *StorageValueCommandRunner) Run(blockNumber int64) error {
+func (r *StorageValueCommandRunner) Run() error {
 	addressToKeys, getKeysErr := r.getStorageKeys()
 	if getKeysErr != nil {
 		return getKeysErr
 	}
 
-	header, getHeaderErr := r.headerRepo.GetHeader(blockNumber)
+	header, getHeaderErr := r.headerRepo.GetHeader(r.blockNumber)
 	if getHeaderErr != nil {
 		return getHeaderErr
 	}
 
 	for address, keys := range addressToKeys {
-		persistStorageErr := r.persistStorageValues(address, keys, blockNumber, header.Hash)
+		persistStorageErr := r.persistStorageValues(address, keys, r.blockNumber, header.Hash)
 		if persistStorageErr != nil {
 			return persistStorageErr
 		}
@@ -143,4 +145,3 @@ func (r *StorageValueCommandRunner) getStorageKeys() (map[common.Address][]commo
 
 	return addressToKeys, nil
 }
-
