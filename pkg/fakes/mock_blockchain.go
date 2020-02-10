@@ -37,6 +37,8 @@ type MockBlockChain struct {
 	GetTransactionsCalled              bool
 	GetTransactionsError               error
 	GetTransactionsPassedHashes        []common.Hash
+	GetStorageAtPassedKeys             []common.Hash
+	GetStorageAtError                  error
 	logQuery                           ethereum.FilterQuery
 	logQueryErr                        error
 	logQueryReturnLogs                 []types.Log
@@ -107,6 +109,16 @@ func (blockChain *MockBlockChain) CallContract(contractHash string, input []byte
 
 func (blockChain *MockBlockChain) LastBlock() (*big.Int, error) {
 	return blockChain.lastBlock, nil
+}
+
+
+func (blockChain *MockBlockChain) GetStorageAt(account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
+	blockChain.GetStorageAtPassedKeys = append(blockChain.GetStorageAtPassedKeys, key)
+	return []byte{}, blockChain.GetStorageAtError
+}
+
+func (blockChain *MockBlockChain) SetGetStorageAtError(err error) {
+	blockChain.GetStorageAtError = err
 }
 
 func (blockChain *MockBlockChain) Node() core.Node {
