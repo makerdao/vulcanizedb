@@ -95,7 +95,7 @@ func (r *StorageValueCommandRunner) Run() error {
 	}
 
 	for address, keys := range addressToKeys {
-		persistStorageErr := r.persistStorageValues(address, keys, r.blockNumber, header.Hash)
+		persistStorageErr := r.getAndPersistStorageValues(address, keys, r.blockNumber, header.Hash)
 		if persistStorageErr != nil {
 			return persistStorageErr
 		}
@@ -104,7 +104,7 @@ func (r *StorageValueCommandRunner) Run() error {
 	return nil
 }
 
-func (r *StorageValueCommandRunner) persistStorageValues(address common.Address, keys []common.Hash, blockNumber int64, headerHash string) error {
+func (r *StorageValueCommandRunner) getAndPersistStorageValues(address common.Address, keys []common.Hash, blockNumber int64, headerHash string) error {
 	blockNumberBigInt := big.NewInt(blockNumber)
 	for _, key := range keys {
 		value, getStorageErr := r.bc.GetStorageAt(address, key, blockNumberBigInt)
