@@ -31,6 +31,10 @@ type Transformer struct {
 	Repository        Repository
 }
 
+func (transformer Transformer) GetStorageKeysLookup() interface{} {
+	return transformer.StorageKeysLookup
+}
+
 func (transformer Transformer) GetContractAddress() common.Address {
 	return transformer.Address
 }
