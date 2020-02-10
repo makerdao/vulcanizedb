@@ -26,7 +26,7 @@ var _ = Describe("getStorageValue Command", func() {
 		db                             = test_config.NewTestDB(test_config.NewTestNode())
 		keysLookupOne, keysLookupTwo   mocks.MockStorageKeysLookup
 		repoOne, repoTwo               mocks.MockStorageRepository
-		runner                         cmd.GetStorageValueRunner
+		runner                         cmd.StorageValueCommandRunner
 		initializerOne, initializerTwo transformer.StorageTransformerInitializer
 		initializers                   []transformer.StorageTransformerInitializer
 		keyOne, keyTwo                 common.Hash
@@ -38,7 +38,7 @@ var _ = Describe("getStorageValue Command", func() {
 
 	BeforeEach(func() {
 		bc = fakes.MockBlockChain{}
-		runner = cmd.GetStorageValueRunner{}
+		runner = cmd.StorageValueCommandRunner{}
 
 		keysLookupOne = mocks.MockStorageKeysLookup{}
 		repoOne = mocks.MockStorageRepository{}
@@ -78,8 +78,8 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("gets the storage keys for each transformer", func() {
-		runnerExecErr := runner.Execute(&bc, db, initializers, blockNumber)
-		Expect(runnerExecErr).NotTo(HaveOccurred())
+		runnerErr := runner.Run(&bc, db, initializers, blockNumber)
+		Expect(runnerErr).NotTo(HaveOccurred())
 
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(keysLookupTwo.GetKeysCalled).To(BeTrue())
@@ -89,8 +89,8 @@ var _ = Describe("getStorageValue Command", func() {
 		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
 		keysLookupTwo.SetKeysToReturn([]common.Hash{keyTwo})
 
-		runnerExecErr := runner.Execute(&bc, db, initializers, blockNumber)
-		Expect(runnerExecErr).NotTo(HaveOccurred())
+		runnerErr := runner.Run(&bc, db, initializers, blockNumber)
+		Expect(runnerErr).NotTo(HaveOccurred())
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(keysLookupTwo.GetKeysCalled).To(BeTrue())
 
@@ -102,20 +102,20 @@ var _ = Describe("getStorageValue Command", func() {
 	It("returns an error if getting the keys from the KeysLookup fails", func() {
 		keysLookupTwo.SetGetKeysError(fakes.FakeError)
 
-		runnerExecErr := runner.Execute(&bc, db, initializers, blockNumber)
+		runnerErr := runner.Run(&bc, db, initializers, blockNumber)
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
-		Expect(runnerExecErr).To(HaveOccurred())
-		Expect(runnerExecErr).To(Equal(fakes.FakeError))
+		Expect(runnerErr).To(HaveOccurred())
+		Expect(runnerErr).To(Equal(fakes.FakeError))
 	})
 
 	It("returns an error if blockchain call to GetStorageAt fails", func() {
 		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
 		bc.SetGetStorageAtError(fakes.FakeError)
 
-		runnerExecErr := runner.Execute(&bc, db, initializers, blockNumber)
+		runnerErr := runner.Run(&bc, db, initializers, blockNumber)
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
-		Expect(runnerExecErr).To(HaveOccurred())
-		Expect(runnerExecErr).To(Equal(fakes.FakeError))
+		Expect(runnerErr).To(HaveOccurred())
+		Expect(runnerErr).To(Equal(fakes.FakeError))
 	})
 
 	It("persists the storage values for each transformer", func() {
@@ -125,8 +125,8 @@ var _ = Describe("getStorageValue Command", func() {
 		value2 := common.BytesToHash([]byte{10, 11, 12})
 		bc.SetStorageValuesToReturn([][]byte{value1[:], value2[:]})
 
-		runnerExecErr := runner.Execute(&bc, db, initializers, blockNumber)
-		Expect(runnerExecErr).NotTo(HaveOccurred())
+		runnerErr := runner.Run(&bc, db, initializers, blockNumber)
+		Expect(runnerErr).NotTo(HaveOccurred())
 
 		var dbResults []dbDiffResult
 		getDbResultsErr := db.Select(&dbResults, `SELECT block_height, block_hash, hashed_address, storage_key, storage_value FROM public.storage_diff`)
@@ -152,10 +152,10 @@ var _ = Describe("getStorageValue Command", func() {
 		Expect(dbResults).To(ConsistOf(expectedResultOne, expectedResultTwo))
 	})
 
-	It("returns an error if a header for the given block cannot be retrived", func() {
-		runnerExecErr := runner.Execute(&bc, db, initializers, blockNumber+1)
-		Expect(runnerExecErr).To(HaveOccurred())
-		Expect(runnerExecErr).To(Equal(sql.ErrNoRows))
+	It("returns an error if a header for the given block cannot be retrieved", func() {
+		runnerErr := runner.Run(&bc, db, initializers, blockNumber+1)
+		Expect(runnerErr).To(HaveOccurred())
+		Expect(runnerErr).To(Equal(sql.ErrNoRows))
 	})
 })
 

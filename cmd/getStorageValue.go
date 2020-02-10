@@ -59,15 +59,15 @@ func getStorageAt(blockNumber int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	storageInitializers := exportTransformers()
-	commandRunner := GetStorageValueRunner{}
-	executeErr := commandRunner.Execute(blockChain, &db, storageInitializers, blockNumber)
+	commandRunner := StorageValueCommandRunner{}
+	executeErr := commandRunner.Run(blockChain, &db, storageInitializers, blockNumber)
 
 	return executeErr
 }
 
-type GetStorageValueRunner struct{}
+type StorageValueCommandRunner struct{}
 
-func (r *GetStorageValueRunner) Execute(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer, blockNumber int64) error {
+func (r *StorageValueCommandRunner) Run(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer, blockNumber int64) error {
 	addressToKeys := make(map[common.Address][]common.Hash)
 	for _, i := range initializers {
 		transformer := i(db)
