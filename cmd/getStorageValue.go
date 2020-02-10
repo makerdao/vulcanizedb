@@ -28,6 +28,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -86,11 +87,10 @@ func (r *GetStorageValueRunner) Execute(bc core.BlockChain, db *postgres.DB, ini
 
 	diffRepo := storage2.NewDiffRepository(db)
 
-	//TODO: add a GetHeader method to the repo?
-	var headerHashAsHex string
-	getHeaderHashError := db.Get(&headerHashAsHex, `SELECT hash FROM headers WHERE block_number=$1`, blockNumber)
-	if getHeaderHashError != nil {
-		return getHeaderHashError
+	headerRepo := repositories.NewHeaderRepository(db)
+	header, getHeaderErr := headerRepo.GetHeader(blockNumber)
+	if getHeaderErr != nil {
+		return getHeaderErr
 	}
 
 	for address, keys := range addressToKeys {
@@ -101,7 +101,7 @@ func (r *GetStorageValueRunner) Execute(bc core.BlockChain, db *postgres.DB, ini
 			}
 			diff := types.RawDiff{
 				HashedAddress: crypto.Keccak256Hash(address[:]),
-				BlockHash:     common.HexToHash(headerHashAsHex),
+				BlockHash:     common.HexToHash(header.Hash),
 				BlockHeight:   int(blockNumber),
 				StorageKey:    key,
 				StorageValue:  common.BytesToHash(value),
