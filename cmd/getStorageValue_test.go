@@ -31,9 +31,9 @@ var _ = Describe("getStorageValue Command", func() {
 		initializers                   []transformer.StorageTransformerInitializer
 		keyOne, keyTwo                 common.Hash
 		addressOne, addressTwo         common.Address
-		blockNumber int64
-		bigIntBlockNumber *big.Int
-		fakeHeader core.Header
+		blockNumber                    int64
+		bigIntBlockNumber              *big.Int
+		fakeHeader                     core.Header
 	)
 
 	BeforeEach(func() {
@@ -153,7 +153,7 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("returns an error if a header for the given block cannot be retrived", func() {
-		runnerExecErr := runner.Execute(&bc, db, initializers, blockNumber + 1)
+		runnerExecErr := runner.Execute(&bc, db, initializers, blockNumber+1)
 		Expect(runnerExecErr).To(HaveOccurred())
 		Expect(runnerExecErr).To(Equal(sql.ErrNoRows))
 	})

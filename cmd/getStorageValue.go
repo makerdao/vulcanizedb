@@ -33,22 +33,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var getStorageValueBlockNumber int64
+
 // getStorageValueCmd represents the getStorageValue command
 var getStorageValueCmd = &cobra.Command{
 	Use:   "getStorageValue",
 	Short: "Gets all storage values for configured contracts at the given block.",
 	Long: `Fetches and persists storage values of the configured contracts at a given block. It is important to note that the storage value gotten with this
 	command may not be different from the previous block in the database.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		fmt.Println("getStorageValue called")
-		getStorageAt(9006717)
+		return getStorageAt(getStorageValueBlockNumber)
 	},
 }
 
 func init() {
-	//getStorageValueCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	getStorageValueCmd.Flags().Int64VarP(&getStorageValueBlockNumber, "get-storage-value-block-number", "b", -1, "block number to fetch storage at for all configured transformers")
 	rootCmd.AddCommand(getStorageValueCmd)
 }
 
@@ -57,9 +59,9 @@ func getStorageAt(blockNumber int64) error {
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	storageInitializers := exportTransformers()
 	commandRunner := GetStorageValueRunner{}
-	commandRunner.Execute(blockChain, &db, storageInitializers, blockNumber)
+	executeErr := commandRunner.Execute(blockChain, &db, storageInitializers, blockNumber)
 
-	return nil
+	return executeErr
 }
 
 type GetStorageValueRunner struct{}
@@ -81,7 +83,6 @@ func (r *GetStorageValueRunner) Execute(bc core.BlockChain, db *postgres.DB, ini
 	}
 
 	blockNumberBigInt := big.NewInt(blockNumber)
-
 
 	diffRepo := storage2.NewDiffRepository(db)
 
@@ -122,7 +123,6 @@ func exportTransformers() []transformer.StorageTransformerInitializer {
 
 	// Get the plugin path and load the plugin
 	_, pluginPath, pathErr := genConfig.GetPluginPaths()
-	fmt.Println("PluginPath:", pluginPath)
 
 	if pathErr != nil {
 		LogWithCommand.Fatalf("failed to get plugin paths: %s", pathErr.Error())
