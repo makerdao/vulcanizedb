@@ -21,7 +21,10 @@ import (
 	"plugin"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
+	storage2 "github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
@@ -54,15 +57,14 @@ func getStorageAt(blockNumber int64) error {
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	storageInitializers := exportTransformers()
 	commandRunner := GetStorageValueRunner{}
-	bigIntBlock := big.NewInt(blockNumber)
-	commandRunner.Execute(blockChain, &db, storageInitializers, bigIntBlock)
+	commandRunner.Execute(blockChain, &db, storageInitializers, blockNumber)
 
 	return nil
 }
 
 type GetStorageValueRunner struct{}
 
-func (r *GetStorageValueRunner) Execute(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer, blockNumber *big.Int) error {
+func (r *GetStorageValueRunner) Execute(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer, blockNumber int64) error {
 	addressToKeys := make(map[common.Address][]common.Hash)
 	for _, i := range initializers {
 		transformer := i(db)
@@ -78,11 +80,36 @@ func (r *GetStorageValueRunner) Execute(bc core.BlockChain, db *postgres.DB, ini
 		addressToKeys[transformer.GetContractAddress()] = keys
 	}
 
+	blockNumberBigInt := big.NewInt(blockNumber)
+
+
+	diffRepo := storage2.NewDiffRepository(db)
+
+	//TODO: add a GetHeader method to the repo?
+	var headerHashAsHex string
+	getHeaderHashError := db.Get(&headerHashAsHex, `SELECT hash FROM headers WHERE block_number=$1`, blockNumber)
+	if getHeaderHashError != nil {
+		return getHeaderHashError
+	}
+
 	for address, keys := range addressToKeys {
 		for _, key := range keys {
-			_, getStorageErr := bc.GetStorageAt(address, key, blockNumber)
+			value, getStorageErr := bc.GetStorageAt(address, key, blockNumberBigInt)
 			if getStorageErr != nil {
 				return getStorageErr
+			}
+			diff := types.RawDiff{
+				HashedAddress: crypto.Keccak256Hash(address[:]),
+				BlockHash:     common.HexToHash(headerHashAsHex),
+				BlockHeight:   int(blockNumber),
+				StorageKey:    key,
+				StorageValue:  common.BytesToHash(value),
+			}
+
+			_, createDiffErr := diffRepo.CreateStorageDiff(diff)
+			if createDiffErr != nil {
+				fmt.Println(createDiffErr)
+				return createDiffErr
 			}
 		}
 	}

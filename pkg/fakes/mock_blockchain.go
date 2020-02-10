@@ -41,6 +41,8 @@ type MockBlockChain struct {
 	GetStorageAtPassedKeys             []common.Hash
 	GetStorageAtPassedBlockNumber      *big.Int
 	GetStorageAtError                  error
+	storageValuesToReturn              [][]byte
+	getStorageAtCallCounter            int
 	logQuery                           ethereum.FilterQuery
 	logQueryErr                        error
 	logQueryReturnLogs                 []types.Log
@@ -117,11 +119,23 @@ func (blockChain *MockBlockChain) GetStorageAt(account common.Address, key commo
 	blockChain.GetStorageAtPassedAccounts = append(blockChain.GetStorageAtPassedAccounts, account)
 	blockChain.GetStorageAtPassedKeys = append(blockChain.GetStorageAtPassedKeys, key)
 	blockChain.GetStorageAtPassedBlockNumber = blockNumber
-	return []byte{}, blockChain.GetStorageAtError
+
+	if len(blockChain.storageValuesToReturn) > 0 {
+		storageToReturn := blockChain.storageValuesToReturn[blockChain.getStorageAtCallCounter]
+		blockChain.getStorageAtCallCounter = blockChain.getStorageAtCallCounter + 1
+
+		return storageToReturn, blockChain.GetStorageAtError
+	} else {
+		return nil, blockChain.GetStorageAtError
+	}
 }
 
 func (blockChain *MockBlockChain) SetGetStorageAtError(err error) {
 	blockChain.GetStorageAtError = err
+}
+
+func (blockChain *MockBlockChain) SetStorageValuesToReturn(values [][]byte) {
+	blockChain.storageValuesToReturn = values
 }
 
 func (blockChain *MockBlockChain) Node() core.Node {
