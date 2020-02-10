@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"plugin"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -124,41 +123,6 @@ func (r *StorageValueCommandRunner) persistStorageValues(address common.Address,
 		}
 	}
 	return nil
-}
-
-func exportTransformers() []transformer.StorageTransformerInitializer {
-	prepConfig()
-
-	// Get the plugin path and load the plugin
-	_, pluginPath, pathErr := genConfig.GetPluginPaths()
-
-	if pathErr != nil {
-		LogWithCommand.Fatalf("failed to get plugin paths: %s", pathErr.Error())
-	}
-
-	LogWithCommand.Info("linking plugin ", pluginPath)
-	plug, openErr := plugin.Open(pluginPath)
-	if openErr != nil {
-		LogWithCommand.Fatalf("linking plugin failed: %s", openErr.Error())
-	}
-
-	// Load the `Exporter` symbol from the plugin
-	LogWithCommand.Info("loading transformers from plugin")
-	symExporter, lookupErr := plug.Lookup("Exporter")
-	if lookupErr != nil {
-		LogWithCommand.Fatalf("loading Exporter symbol failed: %s", lookupErr.Error())
-	}
-
-	// Assert that the symbol is of type Exporter
-	exporter, ok := symExporter.(Exporter)
-	if !ok {
-		LogWithCommand.Fatal("plugged-in symbol not of type Exporter")
-	}
-
-	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
-	_, ethStorageInitializers, _ := exporter.Export()
-
-	return ethStorageInitializers
 }
 
 func (r *StorageValueCommandRunner) getStorageKeys() (map[common.Address][]common.Hash, error) {
