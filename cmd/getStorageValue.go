@@ -59,62 +59,70 @@ func getStorageAt(blockNumber int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	storageInitializers := exportTransformers()
-	commandRunner := StorageValueCommandRunner{}
-	executeErr := commandRunner.Run(blockChain, &db, storageInitializers, blockNumber)
-
-	return executeErr
+	commandRunner := NewStorageValueCommandRunner(blockChain, &db, storageInitializers)
+	return commandRunner.Run(blockNumber)
 }
 
-type StorageValueCommandRunner struct{}
+func NewStorageValueCommandRunner(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer) StorageValueCommandRunner{
+	return StorageValueCommandRunner{
+		bc:      bc,
+		db: db,
+		headerRepo:      repositories.NewHeaderRepository(db),
+		storageDiffRepo: storage2.NewDiffRepository(db),
+		initializers:    initializers,
+	}
+}
 
-func (r *StorageValueCommandRunner) Run(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer, blockNumber int64) error {
-	addressToKeys := make(map[common.Address][]common.Hash)
-	for _, i := range initializers {
-		transformer := i(db)
-		keysLookup, ok := transformer.GetStorageKeysLookup().(storage.KeysLookup)
-		if !ok {
-			errorString := fmt.Sprintf("%v type incompatible. Should be a storage.KeysLookup", keysLookup)
-			return errors.New(errorString)
-		}
-		keys, getKeysErr := keysLookup.GetKeys()
-		if getKeysErr != nil {
-			return getKeysErr
-		}
-		addressToKeys[transformer.GetContractAddress()] = keys
+type StorageValueCommandRunner struct{
+	bc core.BlockChain
+	db *postgres.DB
+	headerRepo repositories.HeaderRepository
+	storageDiffRepo storage2.DiffRepository
+	initializers []transformer.StorageTransformerInitializer
+}
+
+func (r *StorageValueCommandRunner) Run(blockNumber int64) error {
+	addressToKeys, getKeysErr := r.getStorageKeys()
+	if getKeysErr != nil {
+		return getKeysErr
 	}
 
-	blockNumberBigInt := big.NewInt(blockNumber)
-
-	diffRepo := storage2.NewDiffRepository(db)
-
-	headerRepo := repositories.NewHeaderRepository(db)
-	header, getHeaderErr := headerRepo.GetHeader(blockNumber)
+	header, getHeaderErr := r.headerRepo.GetHeader(blockNumber)
 	if getHeaderErr != nil {
 		return getHeaderErr
 	}
 
 	for address, keys := range addressToKeys {
-		for _, key := range keys {
-			value, getStorageErr := bc.GetStorageAt(address, key, blockNumberBigInt)
-			if getStorageErr != nil {
-				return getStorageErr
-			}
-			diff := types.RawDiff{
-				HashedAddress: crypto.Keccak256Hash(address[:]),
-				BlockHash:     common.HexToHash(header.Hash),
-				BlockHeight:   int(blockNumber),
-				StorageKey:    key,
-				StorageValue:  common.BytesToHash(value),
-			}
-
-			_, createDiffErr := diffRepo.CreateStorageDiff(diff)
-			if createDiffErr != nil {
-				fmt.Println(createDiffErr)
-				return createDiffErr
-			}
+		persistStorageErr := r.persistStorageValues(address, keys, blockNumber, header.Hash)
+		if persistStorageErr != nil {
+			return persistStorageErr
 		}
 	}
 
+	return nil
+}
+
+func (r *StorageValueCommandRunner) persistStorageValues(address common.Address, keys []common.Hash, blockNumber int64, headerHash string) error {
+	blockNumberBigInt := big.NewInt(blockNumber)
+	for _, key := range keys {
+		value, getStorageErr := r.bc.GetStorageAt(address, key, blockNumberBigInt)
+		if getStorageErr != nil {
+			return getStorageErr
+		}
+		diff := types.RawDiff{
+			HashedAddress: crypto.Keccak256Hash(address[:]),
+			BlockHash:     common.HexToHash(headerHash),
+			BlockHeight:   int(blockNumber),
+			StorageKey:    key,
+			StorageValue:  common.BytesToHash(value),
+		}
+
+		_, createDiffErr := r.storageDiffRepo.CreateStorageDiff(diff)
+		if createDiffErr != nil {
+			fmt.Println(createDiffErr)
+			return createDiffErr
+		}
+	}
 	return nil
 }
 
@@ -152,3 +160,23 @@ func exportTransformers() []transformer.StorageTransformerInitializer {
 
 	return ethStorageInitializers
 }
+
+func (r *StorageValueCommandRunner) getStorageKeys() (map[common.Address][]common.Hash, error) {
+	addressToKeys := make(map[common.Address][]common.Hash)
+	for _, i := range r.initializers {
+		transformer := i(r.db)
+		keysLookup, ok := transformer.GetStorageKeysLookup().(storage.KeysLookup)
+		if !ok {
+			errorString := fmt.Sprintf("%v type incompatible. Should be a storage.KeysLookup", keysLookup)
+			return addressToKeys, errors.New(errorString)
+		}
+		keys, getKeysErr := keysLookup.GetKeys()
+		if getKeysErr != nil {
+			return addressToKeys, getKeysErr
+		}
+		addressToKeys[transformer.GetContractAddress()] = keys
+	}
+
+	return addressToKeys, nil
+}
+
