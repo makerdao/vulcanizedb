@@ -23,16 +23,33 @@ import (
 )
 
 type MockStorageKeysLookup struct {
-	Metadata     types.ValueMetadata
-	LookupCalled bool
-	LookupErr    error
+	Metadata      types.ValueMetadata
+	LookupCalled  bool
+	LookupErr     error
+	keysToReturn  []common.Hash
+	GetKeysCalled bool
+	getKeysError  error
+	db            *postgres.DB
 }
 
-func (mappings *MockStorageKeysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
-	mappings.LookupCalled = true
-	return mappings.Metadata, mappings.LookupErr
+func (lookup *MockStorageKeysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
+	lookup.LookupCalled = true
+	return lookup.Metadata, lookup.LookupErr
 }
 
-func (*MockStorageKeysLookup) SetDB(db *postgres.DB) {
-	panic("implement me")
+func (lookup *MockStorageKeysLookup) GetKeys() ([]common.Hash, error) {
+	lookup.GetKeysCalled = true
+	return lookup.keysToReturn, lookup.getKeysError
+}
+
+func (lookup *MockStorageKeysLookup) SetDB(db *postgres.DB) {
+	lookup.db = db
+}
+
+func (lookup *MockStorageKeysLookup) SetKeysToReturn(keys []common.Hash) {
+	lookup.keysToReturn = keys
+}
+
+func (lookup *MockStorageKeysLookup) SetGetKeysError(err error) {
+	lookup.getKeysError = err
 }

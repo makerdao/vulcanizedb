@@ -113,12 +113,11 @@ var _ = Describe("Storage keys lookup", func() {
 
 	Describe("GetKeys", func() {
 		var (
-			mappings = make(map[common.Hash]types.ValueMetadata)
-			keyOne   = fakes.FakeHash
-			keyTwo   = fakes.AnotherFakeHash
+			mappings       = make(map[common.Hash]types.ValueMetadata)
+			keyOne         = fakes.FakeHash
+			keyTwo         = fakes.AnotherFakeHash
 			keccakedKeyOne = crypto.Keccak256Hash(keyOne[:])
 			keccakedKeyTwo = crypto.Keccak256Hash(keyTwo[:])
-
 		)
 
 		BeforeEach(func() {
@@ -146,7 +145,7 @@ var _ = Describe("Storage keys lookup", func() {
 			Expect(keys).To(ContainElement(keccakedKeyTwo))
 		})
 
-		It("returns an error if GetKeys fails", func(){
+		It("returns an error if GetKeys fails", func() {
 			loader.SetLoadMappingError(fakes.FakeError)
 
 			_, err := lookup.GetKeys()
