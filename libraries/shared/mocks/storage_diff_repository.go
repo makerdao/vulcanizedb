@@ -29,6 +29,10 @@ type MockStorageDiffRepository struct {
 	MarkCheckedPassedID  int64
 }
 
+func (repository *MockStorageDiffRepository) MarkFromBackfill(id int64) error {
+	panic("implement me")
+}
+
 func (repository *MockStorageDiffRepository) GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool) {
 	for _, diff := range repository.GetNewDiffsDiffs {
 		diffs <- diff
