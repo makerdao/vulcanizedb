@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("getStorageValue Command", func() {
 	var (
-		bc                             fakes.MockBlockChain
+		bc                             *fakes.MockBlockChain
 		db                             = test_config.NewTestDB(test_config.NewTestNode())
 		keysLookupOne, keysLookupTwo   mocks.MockStorageKeysLookup
 		repoOne, repoTwo               mocks.MockStorageRepository
@@ -37,7 +37,7 @@ var _ = Describe("getStorageValue Command", func() {
 	)
 
 	BeforeEach(func() {
-		bc = fakes.MockBlockChain{}
+		bc = fakes.NewMockBlockChain()
 
 		keysLookupOne = mocks.MockStorageKeysLookup{}
 		repoOne = mocks.MockStorageRepository{}
@@ -70,7 +70,7 @@ var _ = Describe("getStorageValue Command", func() {
 		_, insertHeaderErr := headerRepository.CreateOrUpdateHeader(fakeHeader)
 		Expect(insertHeaderErr).NotTo(HaveOccurred())
 
-		runner = cmd.NewStorageValueCommandRunner(&bc, db, initializers, blockNumber)
+		runner = cmd.NewStorageValueCommandRunner(bc, db, initializers, blockNumber)
 	})
 
 	AfterEach(func() {
@@ -123,7 +123,8 @@ var _ = Describe("getStorageValue Command", func() {
 		keysLookupTwo.SetKeysToReturn([]common.Hash{keyTwo})
 		value1 := common.BytesToHash([]byte{7, 8, 9})
 		value2 := common.BytesToHash([]byte{10, 11, 12})
-		bc.SetStorageValuesToReturn([][]byte{value1[:], value2[:]})
+		bc.SetStorageValuesToReturn(addressOne, value1[:])
+		bc.SetStorageValuesToReturn(addressTwo, value2[:])
 
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
@@ -156,10 +157,10 @@ var _ = Describe("getStorageValue Command", func() {
 		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
 		value1 := common.BytesToHash([]byte{7, 8, 9})
 		//Simulating requesting the same key from the blockChain twice
-		bc.SetStorageValuesToReturn([][]byte{value1[:], value1[:]})
+		bc.SetStorageValuesToReturn(addressOne, value1[:])
 
 		initializers := []transformer.StorageTransformerInitializer{initializerOne}
-		runner = cmd.NewStorageValueCommandRunner(&bc, db, initializers, blockNumber)
+		runner = cmd.NewStorageValueCommandRunner(bc, db, initializers, blockNumber)
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 
@@ -191,7 +192,7 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("returns an error if a header for the given block cannot be retrieved", func() {
-		runner := cmd.NewStorageValueCommandRunner(&bc, db, initializers, blockNumber+1)
+		runner := cmd.NewStorageValueCommandRunner(bc, db, initializers, blockNumber+1)
 		runnerErr := runner.Run()
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(sql.ErrNoRows))
