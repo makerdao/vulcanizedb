@@ -147,7 +147,7 @@ var _ = Describe("getStorageValue Command", func() {
 
 		trimmedHeaderHash := strings.TrimPrefix(fakeHeader.Hash, "0x")
 		headerHashBytes := common.HexToHash(trimmedHeaderHash)
-		expectedDiffOne :=	types.RawDiff{
+		expectedDiffOne := types.RawDiff{
 			BlockHeight:   int(blockNumber),
 			BlockHash:     headerHashBytes,
 			HashedAddress: crypto.Keccak256Hash(addressOne[:]),
@@ -175,5 +175,19 @@ var _ = Describe("getStorageValue Command", func() {
 		diffRepo.SetCreateError(fakes.FakeError)
 		runnerErr := runner.Run()
 		Expect(runnerErr).To(HaveOccurred())
+		Expect(runnerErr).To(Equal(fakes.FakeError))
+	})
+
+	It("sets the diff a from_backfill", func() {
+		runnerErr := runner.Run()
+		Expect(runnerErr).NotTo(HaveOccurred())
+		Expect(diffRepo.MarkFromBackfillCalled).To(BeTrue())
+	})
+
+	It("returns an error if setting the diff as from_backfill fails", func() {
+		diffRepo.SetMarkFromBackfillError(fakes.FakeError)
+		runnerErr := runner.Run()
+		Expect(runnerErr).To(HaveOccurred())
+		Expect(runnerErr).To(Equal(fakes.FakeError))
 	})
 })

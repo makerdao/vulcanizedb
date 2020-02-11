@@ -120,12 +120,17 @@ func (r *StorageValueCommandRunner) getAndPersistStorageValues(address common.Ad
 			StorageValue:  common.BytesToHash(value),
 		}
 
-		_, createDiffErr := r.StorageDiffRepo.CreateStorageDiff(diff)
+		diffId, createDiffErr := r.StorageDiffRepo.CreateStorageDiff(diff)
 		if createDiffErr != nil {
 			if createDiffErr == sql.ErrNoRows {
 				return nil
 			}
 			return createDiffErr
+		}
+
+		markFromBackfillErr := r.StorageDiffRepo.MarkFromBackfill(diffId)
+		if markFromBackfillErr != nil {
+			return markFromBackfillErr
 		}
 	}
 	return nil
