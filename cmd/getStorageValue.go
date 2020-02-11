@@ -27,6 +27,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/utils"
@@ -67,8 +68,8 @@ func NewStorageValueCommandRunner(bc core.BlockChain, db *postgres.DB, initializ
 	return StorageValueCommandRunner{
 		bc:              bc,
 		db:              db,
-		headerRepo:      repositories.NewHeaderRepository(db),
-		storageDiffRepo: storage2.NewDiffRepository(db),
+		HeaderRepo:      repositories.NewHeaderRepository(db),
+		StorageDiffRepo: storage2.NewDiffRepository(db),
 		initializers:    initializers,
 		blockNumber:     blockNumber,
 	}
@@ -77,8 +78,8 @@ func NewStorageValueCommandRunner(bc core.BlockChain, db *postgres.DB, initializ
 type StorageValueCommandRunner struct {
 	bc              core.BlockChain
 	db              *postgres.DB
-	headerRepo      repositories.HeaderRepository
-	storageDiffRepo storage2.DiffRepository
+	HeaderRepo      datastore.HeaderRepository
+	StorageDiffRepo storage2.DiffRepository
 	initializers    []transformer.StorageTransformerInitializer
 	blockNumber     int64
 }
@@ -89,7 +90,7 @@ func (r *StorageValueCommandRunner) Run() error {
 		return getKeysErr
 	}
 
-	header, getHeaderErr := r.headerRepo.GetHeader(r.blockNumber)
+	header, getHeaderErr := r.HeaderRepo.GetHeader(r.blockNumber)
 	if getHeaderErr != nil {
 		return getHeaderErr
 	}
@@ -119,11 +120,10 @@ func (r *StorageValueCommandRunner) getAndPersistStorageValues(address common.Ad
 			StorageValue:  common.BytesToHash(value),
 		}
 
-		_, createDiffErr := r.storageDiffRepo.CreateStorageDiff(diff)
+		_, createDiffErr := r.StorageDiffRepo.CreateStorageDiff(diff)
 		if createDiffErr != nil {
 			if createDiffErr == sql.ErrNoRows {
 				return nil
-
 			}
 			return createDiffErr
 		}
