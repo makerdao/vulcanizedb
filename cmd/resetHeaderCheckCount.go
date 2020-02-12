@@ -43,14 +43,12 @@ Use: ./vulcanizedb resetHeaderCheckCount --header-block-number=<block number>
 
 		validationErr := validateBlockNumberArg(resetHeaderCountBlockNumber)
 		if validationErr != nil {
-			errorString := fmt.Sprintf("%v: header-block-number argument is required and not value was given.", SubCommand)
-			return errors.New(errorString)
+			return fmt.Errorf("%v: header-block-number argument is required and not value was given.", SubCommand)
 		}
 
 		resetErr := resetHeaderCount(int64(resetHeaderCountBlockNumber))
 		if resetErr != nil {
-			errorString := fmt.Sprintf("%v: Failed to reset header %v check_count to 0. Err: %v", SubCommand, resetHeaderCountBlockNumber, resetErr)
-			return errors.New(errorString)
+			return fmt.Errorf("%v: Failed to reset header %v check_count to 0. Err: %v", SubCommand, resetHeaderCountBlockNumber, resetErr)
 		}
 
 		return nil

@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -142,8 +141,7 @@ func (r *StorageValueCommandRunner) getStorageKeys() (map[common.Address][]commo
 		transformer := i(r.db)
 		keysLookup, ok := transformer.GetStorageKeysLookup().(storage.KeysLookup)
 		if !ok {
-			errorString := fmt.Sprintf("%v type incompatible. Should be a storage.KeysLookup", keysLookup)
-			return addressToKeys, errors.New(errorString)
+			return addressToKeys, fmt.Errorf("%v type incompatible. Should be a storage.KeysLookup", keysLookup)
 		}
 		keys, getKeysErr := keysLookup.GetKeys()
 		if getKeysErr != nil {
