@@ -257,3 +257,10 @@ func exportTransformers() []transformer.StorageTransformerInitializer {
 
 	return ethStorageInitializers
 }
+
+func validateBlockNumberArg(blockNumber int64, argName string) error {
+	if blockNumber == -1 {
+		return fmt.Errorf("SubCommand: %v: %s argument is required and no value was given", SubCommand, argName)
+	}
+	return nil
+}

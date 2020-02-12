@@ -23,28 +23,38 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var getStorageValueBlockNumber int64
+var (
+	getStorageValueBlockNumber int64
+	getStorageFlagName         = "get-storage-value-block-number"
+)
 
 // getStorageValueCmd represents the getStorageValue command
 var getStorageValueCmd = &cobra.Command{
 	Use:   "getStorageValue",
 	Short: "Gets all storage values for configured contracts at the given block.",
-	Long: `Fetches and persists storage values of the configured contracts at a given block. It is important to note that the storage value gotten with this
-	command may not be different from the previous block in the database.`,
+	Long: fmt.Sprintf(`Fetches and persists storage values of the configured contracts at a given block. It is important to note that the storage value gotten with this command may not be different from the previous block in the database.
+
+Use: ./vulcanizedb getStorageValueAt --config=<config.toml> --%s=<block number>`, getStorageFlagName),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		LogWithCommand.Infof("Getting storage values for all known keys at block %d", getStorageValueBlockNumber)
+
+		validationErr := validateBlockNumberArg(getStorageValueBlockNumber, getStorageFlagName)
+		if validationErr != nil {
+			return validationErr
+		}
+
 		getStorageErr := getStorageAt(getStorageValueBlockNumber)
 		if getStorageErr != nil {
-			return fmt.Errorf("%v: Failed to get storage values at block %v. Err: %v", SubCommand, getStorageValueBlockNumber, getStorageErr)
+			return fmt.Errorf("SubCommand %v: Failed to get storage values at block %v. Err: %v", SubCommand, getStorageValueBlockNumber, getStorageErr)
 		}
 		return nil
 	},
 }
 
 func init() {
-	getStorageValueCmd.Flags().Int64VarP(&getStorageValueBlockNumber, "get-storage-value-block-number", "b", -1, "block number to fetch storage at for all configured transformers")
+	getStorageValueCmd.Flags().Int64VarP(&getStorageValueBlockNumber, getStorageFlagName, "b", -1, "block number to fetch storage at for all configured transformers")
 	rootCmd.AddCommand(getStorageValueCmd)
 }
 
