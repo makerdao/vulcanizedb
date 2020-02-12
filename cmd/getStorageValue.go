@@ -46,7 +46,7 @@ var getStorageValueCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
-		fmt.Println("getStorageValue called")
+		LogWithCommand.Infof("Getting storage values for all known keys at block %d", getStorageValueBlockNumber)
 		return getStorageAt(getStorageValueBlockNumber)
 	},
 }
