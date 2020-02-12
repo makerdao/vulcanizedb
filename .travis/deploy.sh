@@ -25,13 +25,19 @@ if [ -z "$ENVIRONMENT" ]; then
     exit 1
 fi
 
-message BUILDING DOCKER IMAGE
-docker build -f dockerfiles/header_sync/Dockerfile . -t header_sync:$TAG
+message BUILDING HEADER-SYNC
+docker build -f dockerfiles/header_sync/Dockerfile . -t makerdao/vdb-headersync:$TAG
+
+message BUILDING EXTRACT-DIFFS
+docker build -f dockerfiles/extract_diffs/Dockerfile . -t makerdao/vdb-extract-diffs:$TAG
 
 message LOGGING INTO DOCKERHUB
 echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USER" --password-stdin
 
-message PUSHING DOCKER IMAGE
+message PUSHING HEADER-SYNC
 docker push makerdao/vdb-headersync:$TAG
 
-message DEPLOYING SERVICE
+message PUSHING EXTRACT-DIFFS
+docker push makerdao/vdb-extract-diffs:$TAG
+
+# message DEPLOYING SERVICE
