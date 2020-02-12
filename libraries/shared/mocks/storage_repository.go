@@ -38,6 +38,4 @@ func (repository *MockStorageRepository) Create(diffID, headerID int64, metadata
 	return repository.CreateErr
 }
 
-func (repository *MockStorageRepository) SetDB(db *postgres.DB) {
-	repository.db = db
-}
+func (repository *MockStorageRepository) SetDB(db *postgres.DB) {}

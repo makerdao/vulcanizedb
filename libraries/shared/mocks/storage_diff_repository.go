@@ -50,15 +50,7 @@ func (repository *MockStorageDiffRepository) CreateStorageDiff(rawDiff types.Raw
 	return repository.CreateReturnID, repository.CreateReturnError
 }
 
-func (repository *MockStorageDiffRepository) SetCreateError(err error) {
-	repository.CreateReturnError = err
-}
-
 func (repository *MockStorageDiffRepository) MarkFromBackfill(id int64) error {
 	repository.MarkFromBackfillCalled = true
 	return repository.MarkFromBackfillError
-}
-
-func (repository *MockStorageDiffRepository) SetMarkFromBackfillError(err error) {
-	repository.MarkFromBackfillError = err
 }

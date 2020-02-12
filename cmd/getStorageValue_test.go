@@ -15,7 +15,6 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
-	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -23,7 +22,6 @@ import (
 var _ = Describe("getStorageValue Command", func() {
 	var (
 		bc                             *fakes.MockBlockChain
-		db                             = test_config.NewTestDB(test_config.NewTestNode())
 		keysLookupOne, keysLookupTwo   mocks.MockStorageKeysLookup
 		runner                         cmd.StorageValueCommandRunner
 		initializerOne, initializerTwo transformer.StorageTransformerInitializer
@@ -71,7 +69,7 @@ var _ = Describe("getStorageValue Command", func() {
 		blockNumber = rand.Int63()
 		bigIntBlockNumber = big.NewInt(blockNumber)
 
-		runner = cmd.NewStorageValueCommandRunner(bc, db, initializers, blockNumber)
+		runner = cmd.NewStorageValueCommandRunner(bc, nil, initializers, blockNumber)
 
 		diffRepo = mocks.MockStorageDiffRepository{}
 		runner.StorageDiffRepo = &diffRepo
@@ -81,10 +79,6 @@ var _ = Describe("getStorageValue Command", func() {
 		fakeHeader.BlockNumber = blockNumber
 		headerRepo.GetHeaderReturnHash = fakeHeader.Hash
 		runner.HeaderRepo = &headerRepo
-	})
-
-	AfterEach(func() {
-		test_config.CleanTestDB(db)
 	})
 
 	It("gets the storage keys for each transformer", func() {
@@ -166,13 +160,13 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("ignores sql.ErrNoRows error for duplicate diffs", func() {
-		diffRepo.SetCreateError(sql.ErrNoRows)
+		diffRepo.CreateReturnError = sql.ErrNoRows
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 	})
 
 	It("returns an error if inserting a diff fails", func() {
-		diffRepo.SetCreateError(fakes.FakeError)
+		diffRepo.CreateReturnError = fakes.FakeError
 		runnerErr := runner.Run()
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(fakes.FakeError))
@@ -185,7 +179,7 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("returns an error if setting the diff as from_backfill fails", func() {
-		diffRepo.SetMarkFromBackfillError(fakes.FakeError)
+		diffRepo.MarkFromBackfillError = fakes.FakeError
 		runnerErr := runner.Run()
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(fakes.FakeError))

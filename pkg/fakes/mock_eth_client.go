@@ -61,7 +61,7 @@ type MockEthClient struct {
 	transactionReceiptErr       error
 	passedAddress               common.Address
 	passedBlockNumber           *big.Int
-	passedBalance               *big.Int
+	balanceToReturn             *big.Int
 	balanceAtErr                error
 	passedbalanceAtContext      context.Context
 }
@@ -125,7 +125,7 @@ func (client *MockEthClient) SetBalanceAtErr(err error) {
 }
 
 func (client *MockEthClient) SetBalanceAt(balance *big.Int) {
-	client.passedBalance = balance
+	client.balanceToReturn = balance
 }
 
 func (client *MockEthClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
@@ -180,7 +180,7 @@ func (client *MockEthClient) BalanceAt(ctx context.Context, account common.Addre
 	client.passedbalanceAtContext = ctx
 	client.passedAddress = account
 	client.passedBlockNumber = blockNumber
-	return client.passedBalance, client.balanceAtErr
+	return client.balanceToReturn, client.balanceAtErr
 }
 
 func (client *MockEthClient) StorageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {

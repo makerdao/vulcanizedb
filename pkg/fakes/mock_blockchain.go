@@ -120,13 +120,8 @@ func (blockChain *MockBlockChain) GetStorageAt(account common.Address, key commo
 	blockChain.GetStorageAtPassedKeys = append(blockChain.GetStorageAtPassedKeys, key)
 	blockChain.GetStorageAtPassedBlockNumber = blockNumber
 
-	if len(blockChain.storageValuesToReturn) > 0 {
-		storageToReturn := blockChain.storageValuesToReturn[account]
-
-		return storageToReturn, blockChain.GetStorageAtError
-	} else {
-		return nil, blockChain.GetStorageAtError
-	}
+	storageToReturn := blockChain.storageValuesToReturn[account]
+	return storageToReturn, blockChain.GetStorageAtError
 }
 
 func (blockChain *MockBlockChain) SetGetStorageAtError(err error) {
