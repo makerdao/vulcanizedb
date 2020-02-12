@@ -1,4 +1,4 @@
-package cmd_test
+package backfill_test
 
 import (
 	"database/sql"
@@ -8,9 +8,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/makerdao/vulcanizedb/cmd"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/backfill"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
@@ -23,7 +23,7 @@ var _ = Describe("getStorageValue Command", func() {
 	var (
 		bc                             *fakes.MockBlockChain
 		keysLookupOne, keysLookupTwo   mocks.MockStorageKeysLookup
-		runner                         cmd.StorageValueCommandRunner
+		runner                         backfill.StorageValueLoader
 		initializerOne, initializerTwo transformer.StorageTransformerInitializer
 		initializers                   []transformer.StorageTransformerInitializer
 		keyOne, keyTwo                 common.Hash
@@ -69,7 +69,7 @@ var _ = Describe("getStorageValue Command", func() {
 		blockNumber = rand.Int63()
 		bigIntBlockNumber = big.NewInt(blockNumber)
 
-		runner = cmd.NewStorageValueCommandRunner(bc, nil, initializers, blockNumber)
+		runner = backfill.NewStorageValueLoader(bc, nil, initializers, blockNumber)
 
 		diffRepo = mocks.MockStorageDiffRepository{}
 		runner.StorageDiffRepo = &diffRepo
