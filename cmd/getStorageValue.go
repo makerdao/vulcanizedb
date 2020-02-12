@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/backfill"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
@@ -33,7 +35,11 @@ var getStorageValueCmd = &cobra.Command{
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		LogWithCommand.Infof("Getting storage values for all known keys at block %d", getStorageValueBlockNumber)
-		return getStorageAt(getStorageValueBlockNumber)
+		getStorageErr := getStorageAt(getStorageValueBlockNumber)
+		if getStorageErr != nil {
+			return fmt.Errorf("%v: Failed to get storage values at block %v. Err: %v", SubCommand, getStorageValueBlockNumber, getStorageErr)
+		}
+		return nil
 	},
 }
 
