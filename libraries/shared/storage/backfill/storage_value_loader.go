@@ -15,6 +15,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/sirupsen/logrus"
 )
 
 func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer, blockNumber int64) StorageValueLoader {
@@ -42,6 +43,7 @@ func (r *StorageValueLoader) Run() error {
 	if getKeysErr != nil {
 		return getKeysErr
 	}
+	logrus.Infof("Received storage keys for %v addresses.", len(addressToKeys))
 
 	header, getHeaderErr := r.HeaderRepo.GetHeader(r.blockNumber)
 	if getHeaderErr != nil {
@@ -54,6 +56,7 @@ func (r *StorageValueLoader) Run() error {
 			return persistStorageErr
 		}
 	}
+	logrus.Infof("Persisted storage values for %v addresses.", len(addressToKeys))
 
 	return nil
 }
