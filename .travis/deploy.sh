@@ -31,6 +31,9 @@ docker build -f dockerfiles/header_sync/Dockerfile . -t makerdao/vdb-headersync:
 message BUILDING EXTRACT-DIFFS
 docker build -f dockerfiles/extract_diffs/Dockerfile . -t makerdao/vdb-extract-diffs:$TAG
 
+message BUILDING RESET-HEADER-CHECK
+docker build -f dockerfiles/reset_header_check_count/Dockerfile . -t makerdao/vdb-reset-header-check:$TAG
+
 message LOGGING INTO DOCKERHUB
 echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USER" --password-stdin
 
@@ -39,5 +42,8 @@ docker push makerdao/vdb-headersync:$TAG
 
 message PUSHING EXTRACT-DIFFS
 docker push makerdao/vdb-extract-diffs:$TAG
+
+message PUSHING RESET-HEADER-CHECK
+docker push makerdao/vdb-reset-header-check:$TAG
 
 # message DEPLOYING SERVICE
