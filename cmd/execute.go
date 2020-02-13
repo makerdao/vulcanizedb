@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
@@ -119,7 +120,7 @@ func executeTransformers() {
 }
 
 type Exporter interface {
-	Export() ([]transformer.EventTransformerInitializer, []storage.TransformerInitializer, []transformer.ContractTransformerInitializer)
+	Export() ([]event.TransformerInitializer, []storage.TransformerInitializer, []transformer.ContractTransformerInitializer)
 }
 
 func watchEthEvents(w *watcher.EventWatcher, wg *sync.WaitGroup) {
