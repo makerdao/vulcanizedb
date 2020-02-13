@@ -20,9 +20,17 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
+
+type ITransformer interface {
+	Execute(diff types.PersistedDiff) error
+	KeccakContractAddress() common.Hash
+	GetStorageKeysLookup() interface{}
+	GetContractAddress() common.Address
+}
+
+type TransformerInitializer func(db *postgres.DB) ITransformer
 
 type Transformer struct {
 	Address           common.Address
@@ -38,7 +46,7 @@ func (transformer Transformer) GetContractAddress() common.Address {
 	return transformer.Address
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {
+func (transformer Transformer) NewTransformer(db *postgres.DB) ITransformer {
 	transformer.StorageKeysLookup.SetDB(db)
 	transformer.Repository.SetDB(db)
 	return transformer
