@@ -62,6 +62,11 @@ func getStorageAt(blockNumber int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	_, storageInitializers, _ := exportTransformers()
+	if len(storageInitializers) == 0 {
+		LogWithCommand.Infof("Exiting the command: no storage transformers found in the given config.")
+		return nil
+	}
+
 	loader := backfill.NewStorageValueLoader(blockChain, &db, storageInitializers, blockNumber)
 	return loader.Run()
 }
