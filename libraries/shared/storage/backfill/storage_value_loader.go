@@ -43,7 +43,6 @@ func (r *StorageValueLoader) Run() error {
 	if getKeysErr != nil {
 		return getKeysErr
 	}
-	logrus.Infof("Received storage keys for %v addresses.", len(addressToKeys))
 
 	header, getHeaderErr := r.HeaderRepo.GetHeader(r.blockNumber)
 	if getHeaderErr != nil {
@@ -61,15 +60,37 @@ func (r *StorageValueLoader) Run() error {
 	return nil
 }
 
+func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash, error) {
+	addressToKeys := make(map[common.Address][]common.Hash)
+	for _, i := range r.initializers {
+		transformer := i(r.db)
+		keysLookup, ok := transformer.GetStorageKeysLookup().(storage.KeysLookup)
+		if !ok {
+			return addressToKeys, fmt.Errorf("%v type incompatible. Should be a storage.KeysLookup", keysLookup)
+		}
+		keys, getKeysErr := keysLookup.GetKeys()
+		if getKeysErr != nil {
+			return addressToKeys, getKeysErr
+		}
+		address := transformer.GetContractAddress()
+		addressToKeys[address] = keys
+		logrus.Infof("Received %v storage keys for address:%v", len(keys), address.Hex())
+	}
+
+	return addressToKeys, nil
+}
+
 func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, keys []common.Hash, blockNumber int64, headerHash string) error {
 	blockNumberBigInt := big.NewInt(blockNumber)
+	keccakOfAddress := crypto.Keccak256Hash(address[:])
+	logrus.Infof("Getting and persisting %v storage keys for address: %v, keccak hash of address: %v", len(keys), address.Hex(), keccakOfAddress.Hex())
 	for _, key := range keys {
 		value, getStorageErr := r.bc.GetStorageAt(address, key, blockNumberBigInt)
 		if getStorageErr != nil {
 			return getStorageErr
 		}
 		diff := types.RawDiff{
-			HashedAddress: crypto.Keccak256Hash(address[:]),
+			HashedAddress: keccakOfAddress,
 			BlockHash:     common.HexToHash(headerHash),
 			BlockHeight:   int(blockNumber),
 			StorageKey:    key,
@@ -90,22 +111,4 @@ func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, 
 		}
 	}
 	return nil
-}
-
-func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash, error) {
-	addressToKeys := make(map[common.Address][]common.Hash)
-	for _, i := range r.initializers {
-		transformer := i(r.db)
-		keysLookup, ok := transformer.GetStorageKeysLookup().(storage.KeysLookup)
-		if !ok {
-			return addressToKeys, fmt.Errorf("%v type incompatible. Should be a storage.KeysLookup", keysLookup)
-		}
-		keys, getKeysErr := keysLookup.GetKeys()
-		if getKeysErr != nil {
-			return addressToKeys, getKeysErr
-		}
-		addressToKeys[transformer.GetContractAddress()] = keys
-	}
-
-	return addressToKeys, nil
 }
