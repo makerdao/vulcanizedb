@@ -42,14 +42,14 @@ var _ = Describe("getStorageValue Command", func() {
 		keysLookupOne = mocks.MockStorageKeysLookup{}
 		keyOne = common.Hash{1, 2, 3}
 		addressOne = fakes.FakeAddress
-		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
+		keysLookupOne.KeysToReturn = []common.Hash{keyOne}
 		valueOne = common.BytesToHash([]byte{7, 8, 9})
 		bc.SetStorageValuesToReturn(addressOne, valueOne[:])
 
 		keysLookupTwo = mocks.MockStorageKeysLookup{}
 		keyTwo = common.Hash{4, 5, 6}
 		addressTwo = fakes.AnotherFakeAddress
-		keysLookupTwo.SetKeysToReturn([]common.Hash{keyTwo})
+		keysLookupTwo.KeysToReturn = []common.Hash{keyTwo}
 		valueTwo = common.BytesToHash([]byte{10, 11, 12})
 		bc.SetStorageValuesToReturn(addressTwo, valueTwo[:])
 
@@ -90,7 +90,7 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("returns an error if getting the keys from the KeysLookup fails", func() {
-		keysLookupTwo.SetGetKeysError(fakes.FakeError)
+		keysLookupTwo.GetKeysError = fakes.FakeError
 
 		runnerErr := runner.Run()
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
@@ -112,8 +112,8 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("gets the storage values for each of the transformer's keys", func() {
-		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
-		keysLookupTwo.SetKeysToReturn([]common.Hash{keyTwo})
+		keysLookupOne.KeysToReturn = []common.Hash{keyOne}
+		keysLookupTwo.KeysToReturn = []common.Hash{keyTwo}
 
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
@@ -126,7 +126,7 @@ var _ = Describe("getStorageValue Command", func() {
 	})
 
 	It("returns an error if blockchain call to GetStorageAt fails", func() {
-		keysLookupOne.SetKeysToReturn([]common.Hash{keyOne})
+		keysLookupOne.KeysToReturn = []common.Hash{keyOne}
 		bc.SetGetStorageAtError(fakes.FakeError)
 
 		runnerErr := runner.Run()

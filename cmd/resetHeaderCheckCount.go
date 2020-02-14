@@ -47,7 +47,7 @@ Use: ./vulcanizedb resetHeaderCheckCount --%s=<block number>`, resetHeaderFlagNa
 			return validationErr
 		}
 
-		resetErr := resetHeaderCount(int64(resetHeaderCountBlockNumber))
+		resetErr := resetHeaderCount(resetHeaderCountBlockNumber)
 		if resetErr != nil {
 			return fmt.Errorf("SubCommand %v: Failed to reset header %v check_count to 0. Err: %v", SubCommand, resetHeaderCountBlockNumber, resetErr)
 		}
