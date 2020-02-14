@@ -37,11 +37,3 @@ func (loader *MockStorageKeysLoader) LoadMappings() (map[common.Hash]types.Value
 func (loader *MockStorageKeysLoader) SetDB(db *postgres.DB) {
 	loader.SetDBCalled = true
 }
-
-func (loader *MockStorageKeysLoader) SetMappingsToLoad(mappings map[common.Hash]types.ValueMetadata) {
-	loader.StorageKeyMappings = mappings
-}
-
-func (loader *MockStorageKeysLoader) SetLoadMappingError(err error) {
-	loader.LoadMappingsError = err
-}

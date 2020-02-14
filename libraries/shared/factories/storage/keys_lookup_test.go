@@ -126,7 +126,7 @@ var _ = Describe("Storage keys lookup", func() {
 		})
 
 		It("gets the keys that were loaded with the loader", func() {
-			loader.SetMappingsToLoad(mappings)
+			loader.StorageKeyMappings = mappings
 
 			keys, err := lookup.GetKeys()
 
@@ -136,7 +136,7 @@ var _ = Describe("Storage keys lookup", func() {
 		})
 
 		It("gets the keccak hash of the loaded keys as well", func() {
-			loader.SetMappingsToLoad(mappings)
+			loader.StorageKeyMappings = mappings
 
 			keys, err := lookup.GetKeys()
 
@@ -146,7 +146,7 @@ var _ = Describe("Storage keys lookup", func() {
 		})
 
 		It("returns an error if GetKeys fails", func() {
-			loader.SetLoadMappingError(fakes.FakeError)
+			loader.LoadMappingsError = fakes.FakeError
 
 			_, err := lookup.GetKeys()
 
