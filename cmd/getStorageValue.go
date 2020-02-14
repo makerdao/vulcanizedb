@@ -61,7 +61,7 @@ func init() {
 func getStorageAt(blockNumber int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-	storageInitializers := exportTransformers()
+	_, storageInitializers, _ := exportTransformers()
 	loader := backfill.NewStorageValueLoader(blockChain, &db, storageInitializers, blockNumber)
 	return loader.Run()
 }

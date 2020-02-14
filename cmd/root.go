@@ -223,12 +223,15 @@ func prepConfig() error {
 	return nil
 }
 
-func exportTransformers() []transformer.StorageTransformerInitializer {
-	prepConfig()
+func exportTransformers() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer) {
+	// Build plugin generator config
+	configErr := prepConfig()
+	if configErr != nil {
+		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
+	}
 
 	// Get the plugin path and load the plugin
 	_, pluginPath, pathErr := genConfig.GetPluginPaths()
-
 	if pathErr != nil {
 		LogWithCommand.Fatalf("failed to get plugin paths: %s", pathErr.Error())
 	}
@@ -253,9 +256,7 @@ func exportTransformers() []transformer.StorageTransformerInitializer {
 	}
 
 	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
-	_, ethStorageInitializers, _ := exporter.Export()
-
-	return ethStorageInitializers
+	return exporter.Export()
 }
 
 func validateBlockNumberArg(blockNumber int64, argName string) error {
