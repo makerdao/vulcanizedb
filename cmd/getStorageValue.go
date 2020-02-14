@@ -61,10 +61,13 @@ func init() {
 func getStorageAt(blockNumber int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-	_, storageInitializers, _ := exportTransformers()
+	_, storageInitializers, _, exportTransformersErr := exportTransformers()
+	if exportTransformersErr != nil {
+		return fmt.Errorf("SubCommand %v: exporting transformers failed: %v", SubCommand, exportTransformersErr)
+	}
+
 	if len(storageInitializers) == 0 {
-		LogWithCommand.Infof("Exiting the command: no storage transformers found in the given config.")
-		return nil
+		return fmt.Errorf("SubCommand %v: no storage transformers found in the given config", SubCommand)
 	}
 
 	loader := backfill.NewStorageValueLoader(blockChain, &db, storageInitializers, blockNumber)

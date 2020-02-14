@@ -223,40 +223,42 @@ func prepConfig() error {
 	return nil
 }
 
-func exportTransformers() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer) {
+func exportTransformers() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer, error) {
 	// Build plugin generator config
 	configErr := prepConfig()
 	if configErr != nil {
-		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: failed to to prepare config: %v", SubCommand, configErr)
 	}
 
 	// Get the plugin path and load the plugin
 	_, pluginPath, pathErr := genConfig.GetPluginPaths()
 	if pathErr != nil {
-		LogWithCommand.Fatalf("failed to get plugin paths: %s", pathErr.Error())
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: failed to get plugin paths: %v", SubCommand, pathErr)
 	}
 
 	LogWithCommand.Info("linking plugin ", pluginPath)
 	plug, openErr := plugin.Open(pluginPath)
 	if openErr != nil {
-		LogWithCommand.Fatalf("linking plugin failed: %s", openErr.Error())
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: linking plugin failed: %v", SubCommand, openErr)
 	}
 
 	// Load the `Exporter` symbol from the plugin
 	LogWithCommand.Info("loading transformers from plugin")
 	symExporter, lookupErr := plug.Lookup("Exporter")
 	if lookupErr != nil {
-		LogWithCommand.Fatalf("loading Exporter symbol failed: %s", lookupErr.Error())
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: loading Exporter symbol failed: %v", SubCommand, lookupErr)
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		LogWithCommand.Fatal("plugged-in symbol not of type Exporter")
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: plugged-in symbol not of type Exporter", SubCommand)
 	}
 
 	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
-	return exporter.Export()
+	eventTransformerInitializers, storageTransformerInitializers, contractTransformerInitializers := exporter.Export()
+
+	return eventTransformerInitializers, storageTransformerInitializers, contractTransformerInitializers, nil
 }
 
 func validateBlockNumberArg(blockNumber int64, argName string) error {

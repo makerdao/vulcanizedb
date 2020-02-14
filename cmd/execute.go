@@ -77,7 +77,10 @@ func init() {
 }
 
 func executeTransformers() {
-	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exportTransformers()
+	ethEventInitializers, ethStorageInitializers, ethContractInitializers, exportTransformersErr := exportTransformers()
+	if exportTransformersErr != nil {
+		LogWithCommand.Fatalf("SubCommand %v: exporting transformers failed: %v", SubCommand, exportTransformersErr)
+	}
 
 	// Setup bc and db objects
 	blockChain := getBlockChain()
