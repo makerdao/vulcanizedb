@@ -26,7 +26,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
 	"github.com/makerdao/vulcanizedb/pkg/eth/client"
