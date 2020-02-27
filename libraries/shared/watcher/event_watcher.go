@@ -116,7 +116,6 @@ func (watcher *EventWatcher) withRetry(call func() error, expectedErrors []error
 			} else {
 				if isUnexpectedError(err, expectedErrors) {
 					consecutiveUnexpectedErrCount++
-					logrus.Errorf("error %s logs: %s", operation, err.Error())
 					if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
 						errs <- err
 						return
