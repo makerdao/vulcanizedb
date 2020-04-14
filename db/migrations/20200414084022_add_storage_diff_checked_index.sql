@@ -1,7 +1,6 @@
 -- +goose Up
-create index storage_diff_checked_index on storage_diff(checked);
+CREATE INDEX storage_diff_checked_index ON public.storage_diff (checked);
 
 
 -- +goose Down
-drop index storage_diff_checked_index;
-
+DROP INDEX storage_diff_checked_index;
