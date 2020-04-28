@@ -55,3 +55,8 @@ func (repository *MockStorageDiffRepository) MarkChecked(id int64) error {
 	repository.MarkCheckedPassedID = id
 	return nil
 }
+
+func (repository *MockStorageDiffRepository) GetFirstDiffForBlockHeight(blockHeight int64) (types.PersistedDiff, error) {
+	return types.PersistedDiff{}, nil
+}
+

@@ -301,4 +301,33 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(checked).To(BeTrue())
 		})
 	})
+
+	Describe("GetFirstDiffForBlockHeight", func() {
+		It("sends first diff for a given block height", func() {
+			blockHeight := fakeStorageDiff.BlockHeight
+			fakeStorageDiff2 := types.RawDiff{
+				HashedAddress: test_data.FakeHash(),
+				BlockHash:     test_data.FakeHash(),
+				BlockHeight:   blockHeight,
+				StorageKey:    test_data.FakeHash(),
+				StorageValue:  test_data.FakeHash(),
+			}
+
+			id1, create1Err := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(create1Err).NotTo(HaveOccurred())
+			_, create2Err := repo.CreateStorageDiff(fakeStorageDiff2)
+			Expect(create2Err).NotTo(HaveOccurred())
+
+			diff, diffErr := repo.GetFirstDiffForBlockHeight(int64(blockHeight))
+			Expect(diffErr).NotTo(HaveOccurred())
+			Expect(diff.ID).To(Equal(id1))
+		})
+
+		It("returns an error if getting the diff fails", func() {
+			_, diffErr := repo.GetFirstDiffForBlockHeight(0)
+			Expect(diffErr).To(HaveOccurred())
+			Expect(diffErr).To(MatchError(sql.ErrNoRows))
+		})
+	})
 })
+
