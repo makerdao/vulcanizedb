@@ -107,3 +107,11 @@ func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endi
 	}
 	return numbers, nil
 }
+
+func (repository HeaderRepository) GetMostRecentHeader() (core.Header, error) {
+	var header core.Header
+	err := repository.database.Get(&header,
+		`SELECT id, block_number, hash, raw, block_timestamp FROM headers ORDER BY block_number DESC LIMIT 1`)
+
+	return header, err
+}
