@@ -95,4 +95,3 @@ func (repository *MockHeaderRepository) AssertCreateOrUpdateHeaderCallCountAndPa
 	Expect(repository.createOrUpdateHeaderCallCount).To(Equal(times))
 	Expect(repository.createOrUpdateHeaderPassedBlockNumbers).To(Equal(blockNumbers))
 }
-

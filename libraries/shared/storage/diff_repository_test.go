@@ -330,4 +330,3 @@ var _ = Describe("Storage diffs repository", func() {
 		})
 	})
 })
-

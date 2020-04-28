@@ -167,7 +167,7 @@ var _ = Describe("Storage Watcher", func() {
 				mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
 				expectedFirstMinDiffID := int(diffs[0].ID)
-				expectedSecondMinDiffID := int(diffs[len(diffs) - 1].ID)
+				expectedSecondMinDiffID := int(diffs[len(diffs)-1].ID)
 
 				err := storageWatcher.Execute()
 

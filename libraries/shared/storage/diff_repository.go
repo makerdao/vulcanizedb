@@ -31,7 +31,7 @@ type DiffRepository interface {
 	CreateBackFilledStorageValue(rawDiff types.RawDiff) error
 	GetNewDiffs(minID, limit int) ([]types.PersistedDiff, error)
 	MarkChecked(id int64) error
-    GetFirstDiffForBlockHeight(blockHeight int64) (types.PersistedDiff, error)
+	GetFirstDiffForBlockHeight(blockHeight int64) (types.PersistedDiff, error)
 }
 
 type diffRepository struct {

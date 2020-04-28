@@ -63,4 +63,3 @@ func (repository *MockStorageDiffRepository) GetFirstDiffForBlockHeight(blockHei
 	repository.GetFirstDiffBlockHeightPassed = blockHeight
 	return repository.GetFirstDiffToReturn, repository.GetFirstDiffErr
 }
-

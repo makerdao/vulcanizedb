@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	ResultsLimit = 500
+	ResultsLimit       = 500
 	BlocksBackFromHead = int64(500)
 )
 
@@ -103,7 +103,7 @@ func (watcher StorageWatcher) transformDiffs() error {
 			return getHeaderErr
 		}
 		blockNumber := mostRecentHeader.BlockNumber - BlocksBackFromHead
-		diff, getDiffErr  := watcher.StorageDiffRepository.GetFirstDiffForBlockHeight(blockNumber)
+		diff, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffForBlockHeight(blockNumber)
 		if getDiffErr != nil {
 			return getDiffErr
 		}
