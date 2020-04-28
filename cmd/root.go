@@ -49,6 +49,7 @@ var (
 	maxUnexpectedErrors int
 	recheckHeadersArg   bool
 	retryInterval       time.Duration
+	skipOldDiffs        bool
 	startingBlockNumber int64
 	storageDiffsPath    string
 	storageDiffsSource  string

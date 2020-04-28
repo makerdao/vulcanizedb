@@ -76,6 +76,7 @@ func init() {
 	executeCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
 	executeCmd.Flags().DurationVarP(&retryInterval, "retry-interval", "i", 7*time.Second, "interval duration between retries on execution error")
 	executeCmd.Flags().IntVarP(&maxUnexpectedErrors, "max-unexpected-errs", "m", 5, "maximum number of unexpected errors to allow (with retries) before exiting")
+	executeCmd.Flags().BoolVarP(&skipOldDiffs, "skip-old-diffs", "s", false, "whether to skip checking storage diffs that are from blocks more than 500 back from the head of the chain")
 }
 
 func executeTransformers() {
@@ -104,7 +105,7 @@ func executeTransformers() {
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		sw := watcher.NewStorageWatcher(&db, retryInterval, false)
+		sw := watcher.NewStorageWatcher(&db, retryInterval, skipOldDiffs)
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)
