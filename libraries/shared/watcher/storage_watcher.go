@@ -32,7 +32,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var ResultsLimit = 500
+var (
+	ResultsLimit = 500
+	BlocksBackFromHead = int64(500)
+)
 
 type ErrHeaderMismatch struct {
 	dbHash   string
@@ -58,9 +61,10 @@ type StorageWatcher struct {
 	KeccakAddressTransformers map[common.Hash]storage2.ITransformer // keccak hash of an address => transformer
 	RetryInterval             time.Duration
 	StorageDiffRepository     storage.DiffRepository
+	SkipOldDiffs              bool
 }
 
-func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration) StorageWatcher {
+func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration, skipOldDiffs bool) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Hash]storage2.ITransformer)
@@ -70,6 +74,7 @@ func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration) StorageWatc
 		KeccakAddressTransformers: transformers,
 		RetryInterval:             retryInterval,
 		StorageDiffRepository:     storageDiffRepository,
+		SkipOldDiffs:              skipOldDiffs,
 	}
 }
 
@@ -91,7 +96,21 @@ func (watcher StorageWatcher) Execute() error {
 }
 
 func (watcher StorageWatcher) transformDiffs() error {
-	minID := 0
+	var minID int
+	if watcher.SkipOldDiffs {
+		mostRecentHeader, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeader()
+		if getHeaderErr != nil {
+			return getHeaderErr
+		}
+		blockNumber := mostRecentHeader.BlockNumber - BlocksBackFromHead
+		diff, getDiffErr  := watcher.StorageDiffRepository.GetFirstDiffForBlockHeight(blockNumber)
+		if getDiffErr != nil {
+			return getDiffErr
+		}
+
+		minID = int(diff.ID)
+	}
+
 	for {
 		diffs, extractErr := watcher.StorageDiffRepository.GetNewDiffs(minID, ResultsLimit)
 		if extractErr != nil {
