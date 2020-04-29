@@ -31,7 +31,7 @@ type DiffRepository interface {
 	CreateBackFilledStorageValue(rawDiff types.RawDiff) error
 	GetNewDiffs(minID, limit int) ([]types.PersistedDiff, error)
 	MarkChecked(id int64) error
-	GetFirstDiffForBlockHeight(blockHeight int64) (types.PersistedDiff, error)
+	GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error)
 }
 
 type diffRepository struct {
@@ -75,10 +75,10 @@ func (repository diffRepository) MarkChecked(id int64) error {
 	return err
 }
 
-func (repository diffRepository) GetFirstDiffForBlockHeight(blockHeight int64) (types.PersistedDiff, error) {
-	var diff types.PersistedDiff
-	err := repository.db.Get(&diff,
-		`SELECT * FROM public.storage_diff WHERE checked IS false AND block_height = $1 LIMIT 1`, blockHeight)
+func (repository diffRepository) GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error) {
+	var diffID int64
+	err := repository.db.Get(&diffID,
+		`SELECT id FROM public.storage_diff WHERE checked IS false AND block_height >= $1 LIMIT 1`, blockHeight)
 
-	return diff, err
+	return diffID, err
 }

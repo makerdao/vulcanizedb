@@ -103,12 +103,12 @@ func (watcher StorageWatcher) transformDiffs() error {
 			return getHeaderErr
 		}
 		blockNumber := mostRecentHeader.BlockNumber - BlocksBackFromHead
-		diff, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffForBlockHeight(blockNumber)
+		diffID, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffIDForBlockHeight(blockNumber)
 		if getDiffErr != nil {
 			return getDiffErr
 		}
 
-		minID = int(diff.ID)
+		minID = int(diffID)
 	}
 
 	for {

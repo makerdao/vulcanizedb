@@ -162,7 +162,7 @@ var _ = Describe("Storage Watcher", func() {
 				header := fakes.GetFakeHeader(rand.Int63())
 				mockHeaderRepository.MostRecentHeader = header
 
-				mockDiffsRepository.GetFirstDiffToReturn = diffs[0]
+				mockDiffsRepository.GetFirstDiffIDToReturn = diffs[0].ID
 				mockDiffsRepository.GetNewDiffsDiffs = diffs
 				mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
@@ -194,7 +194,7 @@ var _ = Describe("Storage Watcher", func() {
 				header := fakes.GetFakeHeader(rand.Int63())
 				mockHeaderRepository.MostRecentHeader = header
 
-				mockDiffsRepository.GetFirstDiffToReturn = diffs[0]
+				mockDiffsRepository.GetFirstDiffIDToReturn = diffs[0].ID
 				mockDiffsRepository.GetNewDiffsDiffs = diffs
 				mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 

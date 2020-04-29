@@ -302,7 +302,7 @@ var _ = Describe("Storage diffs repository", func() {
 		})
 	})
 
-	Describe("GetFirstDiffForBlockHeight", func() {
+	Describe("GetFirstDiffIDForBlockHeight", func() {
 		It("sends first diff for a given block height", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
 			fakeStorageDiff2 := types.RawDiff{
@@ -318,13 +318,34 @@ var _ = Describe("Storage diffs repository", func() {
 			_, create2Err := repo.CreateStorageDiff(fakeStorageDiff2)
 			Expect(create2Err).NotTo(HaveOccurred())
 
-			diff, diffErr := repo.GetFirstDiffForBlockHeight(int64(blockHeight))
+			diffID, diffErr := repo.GetFirstDiffIDForBlockHeight(int64(blockHeight))
 			Expect(diffErr).NotTo(HaveOccurred())
-			Expect(diff.ID).To(Equal(id1))
+			Expect(diffID).To(Equal(id1))
+		})
+
+		It("sends a diff for the next block height if one doesn't exist for the block passed in", func() {
+			blockHeight := fakeStorageDiff.BlockHeight
+			fakeStorageDiff2 := types.RawDiff{
+				HashedAddress: test_data.FakeHash(),
+				BlockHash:     test_data.FakeHash(),
+				BlockHeight:   blockHeight,
+				StorageKey:    test_data.FakeHash(),
+				StorageValue:  test_data.FakeHash(),
+			}
+
+			id1, create1Err := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(create1Err).NotTo(HaveOccurred())
+			_, create2Err := repo.CreateStorageDiff(fakeStorageDiff2)
+			Expect(create2Err).NotTo(HaveOccurred())
+
+			blockBeforeDiffBlockHeight := int64(blockHeight - 1)
+			diffID, diffErr := repo.GetFirstDiffIDForBlockHeight(blockBeforeDiffBlockHeight)
+			Expect(diffErr).NotTo(HaveOccurred())
+			Expect(diffID).To(Equal(id1))
 		})
 
 		It("returns an error if getting the diff fails", func() {
-			_, diffErr := repo.GetFirstDiffForBlockHeight(0)
+			_, diffErr := repo.GetFirstDiffIDForBlockHeight(0)
 			Expect(diffErr).To(HaveOccurred())
 			Expect(diffErr).To(MatchError(sql.ErrNoRows))
 		})
