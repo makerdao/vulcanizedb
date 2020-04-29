@@ -78,7 +78,7 @@ func (repository diffRepository) MarkChecked(id int64) error {
 func (repository diffRepository) GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error) {
 	var diffID int64
 	err := repository.db.Get(&diffID,
-		`SELECT id FROM public.storage_diff WHERE checked IS false AND block_height >= $1 LIMIT 1`, blockHeight)
+		`SELECT id FROM public.storage_diff WHERE block_height >= $1 LIMIT 1`, blockHeight)
 
 	return diffID, err
 }

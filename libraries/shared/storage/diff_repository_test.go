@@ -283,7 +283,7 @@ var _ = Describe("Storage diffs repository", func() {
 			fakePersistedDiff := types.PersistedDiff{
 				RawDiff: fakeRawDiff,
 				ID:      rand.Int63(),
-				Checked: true,
+				Checked: false,
 			}
 			_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
 				hashed_address, storage_key, storage_value, checked) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -342,6 +342,31 @@ var _ = Describe("Storage diffs repository", func() {
 			diffID, diffErr := repo.GetFirstDiffIDForBlockHeight(blockBeforeDiffBlockHeight)
 			Expect(diffErr).NotTo(HaveOccurred())
 			Expect(diffID).To(Equal(id1))
+		})
+
+		It("won't fail if all of the diffs within the id range are already checked", func() {
+			fakeRawDiff := types.RawDiff{
+				HashedAddress: test_data.FakeHash(),
+				BlockHash:     test_data.FakeHash(),
+				BlockHeight:   rand.Int(),
+				StorageKey:    test_data.FakeHash(),
+				StorageValue:  test_data.FakeHash(),
+			}
+			fakePersistedDiff := types.PersistedDiff{
+				RawDiff: fakeRawDiff,
+				ID:      rand.Int63(),
+				Checked: true,
+			}
+			_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
+				hashed_address, storage_key, storage_value, checked) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+				fakePersistedDiff.ID, fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(),
+				fakeRawDiff.HashedAddress.Bytes(), fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes(),
+				fakePersistedDiff.Checked)
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			blockBeforeDiffBlockHeight := int64(fakeRawDiff.BlockHeight - 1)
+			_, diffErr := repo.GetFirstDiffIDForBlockHeight(blockBeforeDiffBlockHeight)
+			Expect(diffErr).NotTo(HaveOccurred())
 		})
 
 		It("returns an error if getting the diff fails", func() {
