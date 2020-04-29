@@ -61,10 +61,10 @@ type StorageWatcher struct {
 	KeccakAddressTransformers map[common.Hash]storage2.ITransformer // keccak hash of an address => transformer
 	RetryInterval             time.Duration
 	StorageDiffRepository     storage.DiffRepository
-	SkipOldDiffs              bool
+	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
 }
 
-func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration, skipOldDiffs bool) StorageWatcher {
+func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration, backFromHeadOfChain int64) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Hash]storage2.ITransformer)
@@ -74,7 +74,7 @@ func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration, skipOldDiff
 		KeccakAddressTransformers: transformers,
 		RetryInterval:             retryInterval,
 		StorageDiffRepository:     storageDiffRepository,
-		SkipOldDiffs:              skipOldDiffs,
+		DiffBlocksFromHeadOfChain: backFromHeadOfChain,
 	}
 }
 
@@ -97,12 +97,12 @@ func (watcher StorageWatcher) Execute() error {
 
 func (watcher StorageWatcher) transformDiffs() error {
 	var minID int
-	if watcher.SkipOldDiffs {
-		mostRecentHeader, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeader()
+	if watcher.DiffBlocksFromHeadOfChain != -1 {
+		mostRecentHeaderBlockNumber, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeaderBlockNumber()
 		if getHeaderErr != nil {
 			return getHeaderErr
 		}
-		blockNumber := mostRecentHeader.BlockNumber - BlocksBackFromHead
+		blockNumber := mostRecentHeaderBlockNumber - watcher.DiffBlocksFromHeadOfChain
 		diffID, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffIDForBlockHeight(blockNumber)
 		if getDiffErr != nil {
 			return getDiffErr

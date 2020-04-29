@@ -38,7 +38,7 @@ var _ = Describe("Storage Watcher", func() {
 		It("adds transformers", func() {
 			fakeHashedAddress := types.HexToKeccak256Hash("0x12345")
 			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
-			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), time.Nanosecond, false)
+			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), time.Nanosecond, -1)
 
 			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -61,6 +61,7 @@ var _ = Describe("Storage Watcher", func() {
 				StorageDiffRepository:     mockDiffsRepository,
 				KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
 				RetryInterval:             time.Nanosecond,
+				DiffBlocksFromHeadOfChain: -1,
 			}
 		})
 
@@ -134,14 +135,15 @@ var _ = Describe("Storage Watcher", func() {
 			Expect(mockDiffsRepository.MarkCheckedPassedID).To(Equal(unwatchedDiff.ID))
 		})
 
-		Describe("When SkipOldDiffs is configured", func() {
+		Describe("When the watcher is configured to skip old diffs", func() {
 			BeforeEach(func() {
+				numberOfBlocksFromHeadOfChain := int64(500)
 				storageWatcher = watcher.StorageWatcher{
 					HeaderRepository:          mockHeaderRepository,
 					StorageDiffRepository:     mockDiffsRepository,
 					KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
 					RetryInterval:             time.Nanosecond,
-					SkipOldDiffs:              true,
+					DiffBlocksFromHeadOfChain: numberOfBlocksFromHeadOfChain,
 				}
 			})
 
