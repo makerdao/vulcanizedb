@@ -161,8 +161,8 @@ var _ = Describe("Storage Watcher", func() {
 					diffs = append(diffs, diff)
 				}
 
-				header := fakes.GetFakeHeader(rand.Int63())
-				mockHeaderRepository.MostRecentHeader = header
+				headerBlockNumber := rand.Int63()
+				mockHeaderRepository.MostRecentHeaderBlockNumber = headerBlockNumber
 
 				mockDiffsRepository.GetFirstDiffIDToReturn = diffs[0].ID
 				mockDiffsRepository.GetNewDiffsDiffs = diffs
@@ -175,7 +175,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
-				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(header.BlockNumber - watcher.BlocksBackFromHead))
+				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(headerBlockNumber - watcher.BlocksBackFromHead))
 				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID, expectedSecondMinDiffID))
 			})
 
@@ -193,8 +193,8 @@ var _ = Describe("Storage Watcher", func() {
 					diffs = append(diffs, diff)
 				}
 
-				header := fakes.GetFakeHeader(rand.Int63())
-				mockHeaderRepository.MostRecentHeader = header
+				headerBlockNumber := rand.Int63()
+				mockHeaderRepository.MostRecentHeaderBlockNumber = headerBlockNumber
 
 				mockDiffsRepository.GetFirstDiffIDToReturn = diffs[0].ID
 				mockDiffsRepository.GetNewDiffsDiffs = diffs
@@ -206,7 +206,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
-				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(header.BlockNumber - watcher.BlocksBackFromHead))
+				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(headerBlockNumber - watcher.BlocksBackFromHead))
 				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID, expectedFirstMinDiffID))
 			})
 		})

@@ -37,8 +37,8 @@ type MockHeaderRepository struct {
 	GetHeaderPassedBlockNumber             int64
 	GetHeadersInRangeStartingBlock         int64
 	GetHeadersInRangeEndingBlock           int64
-	MostRecentHeader                       core.Header
-	MostRecentHeaderErr                    error
+	MostRecentHeaderBlockNumber            int64
+	MostRecentHeaderBlockNumberErr         error
 }
 
 func NewMockHeaderRepository() *MockHeaderRepository {
@@ -87,8 +87,8 @@ func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber,
 	return repository.missingBlockNumbers, nil
 }
 
-func (repository *MockHeaderRepository) GetMostRecentHeader() (core.Header, error) {
-	return repository.MostRecentHeader, repository.MostRecentHeaderErr
+func (repository *MockHeaderRepository) GetMostRecentHeaderBlockNumber() (int64, error) {
+	return repository.MostRecentHeaderBlockNumber, repository.MostRecentHeaderBlockNumberErr
 }
 
 func (repository *MockHeaderRepository) AssertCreateOrUpdateHeaderCallCountAndPassedBlockNumbers(times int, blockNumbers []int64) {

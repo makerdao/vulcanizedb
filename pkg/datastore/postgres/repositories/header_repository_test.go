@@ -444,8 +444,8 @@ var _ = Describe("Block header repository", func() {
 		})
 	})
 
-	Describe("GetMostRecentHeader", func() {
-		It("gets the most recent header by block number", func() {
+	Describe("GetMostRecentHeaderBlockNumber", func() {
+		It("gets the most recent header block number", func() {
 			_, createHeader1Err := repo.CreateOrUpdateHeader(header)
 			Expect(createHeader1Err).NotTo(HaveOccurred())
 
@@ -454,13 +454,13 @@ var _ = Describe("Block header repository", func() {
 			_, createHeader2Err := repo.CreateOrUpdateHeader(header2)
 			Expect(createHeader2Err).NotTo(HaveOccurred())
 
-			mostRecentHeader, err := repo.GetMostRecentHeader()
+			mostRecentHeaderBlock, err := repo.GetMostRecentHeaderBlockNumber()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(mostRecentHeader.BlockNumber).To(Equal(header2BlockNumber))
+			Expect(mostRecentHeaderBlock).To(Equal(header2BlockNumber))
 		})
 
 		It("returns an error if it fails to get the most recent header", func() {
-			_, err := repo.GetMostRecentHeader()
+			_, err := repo.GetMostRecentHeaderBlockNumber()
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
