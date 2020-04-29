@@ -108,7 +108,7 @@ func (watcher StorageWatcher) transformDiffs() error {
 			return getDiffErr
 		}
 
-		minID = int(diffID)
+		minID = int(diffID - 1)
 	}
 
 	for {
