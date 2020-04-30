@@ -95,20 +95,29 @@ func (watcher StorageWatcher) Execute() error {
 	}
 }
 
-func (watcher StorageWatcher) transformDiffs() error {
+func (watcher StorageWatcher) getMinDiffID() (int, error) {
 	var minID int
 	if watcher.DiffBlocksFromHeadOfChain != -1 {
 		mostRecentHeaderBlockNumber, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeaderBlockNumber()
 		if getHeaderErr != nil {
-			return getHeaderErr
+			return 0, getHeaderErr
 		}
 		blockNumber := mostRecentHeaderBlockNumber - watcher.DiffBlocksFromHeadOfChain
 		diffID, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffIDForBlockHeight(blockNumber)
 		if getDiffErr != nil {
-			return getDiffErr
+			return 0, getDiffErr
 		}
 
 		minID = int(diffID - 1)
+	}
+
+	return minID, nil
+}
+
+func (watcher StorageWatcher) transformDiffs() error {
+	minID, err := watcher.getMinDiffID()
+	if err != nil && err != sql.ErrNoRows {
+		return err
 	}
 
 	for {

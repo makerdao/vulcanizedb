@@ -17,6 +17,7 @@
 package watcher_test
 
 import (
+	"database/sql"
 	"errors"
 	"math/rand"
 	"time"
@@ -136,6 +137,8 @@ var _ = Describe("Storage Watcher", func() {
 		})
 
 		Describe("When the watcher is configured to skip old diffs", func() {
+			var diffs []types.PersistedDiff
+
 			BeforeEach(func() {
 				numberOfBlocksFromHeadOfChain := int64(500)
 				storageWatcher = watcher.StorageWatcher{
@@ -145,10 +148,6 @@ var _ = Describe("Storage Watcher", func() {
 					RetryInterval:             time.Nanosecond,
 					DiffBlocksFromHeadOfChain: numberOfBlocksFromHeadOfChain,
 				}
-			})
-
-			It("skips diffs that are from a block more than 500 from the head of the chain", func() {
-				var diffs []types.PersistedDiff
 				diffID := rand.Int()
 				for i := 0; i < watcher.ResultsLimit; i++ {
 					diffID = diffID + i
@@ -160,7 +159,9 @@ var _ = Describe("Storage Watcher", func() {
 					}
 					diffs = append(diffs, diff)
 				}
+			})
 
+			It("skips diffs that are from a block more than n from the head of the chain", func() {
 				headerBlockNumber := rand.Int63()
 				mockHeaderRepository.MostRecentHeaderBlockNumber = headerBlockNumber
 
@@ -208,6 +209,34 @@ var _ = Describe("Storage Watcher", func() {
 				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
 				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(headerBlockNumber - watcher.BlocksBackFromHead))
 				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID, expectedFirstMinDiffID))
+			})
+
+			It("sets minID to 0 if there are no headers with the given block height", func() {
+				mockHeaderRepository.MostRecentHeaderBlockNumberErr = sql.ErrNoRows
+				mockDiffsRepository.GetNewDiffsDiffs = diffs
+				mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
+				err := storageWatcher.Execute()
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
+
+				expectedFirstMinDiffID := 0
+				expectedSecondMinDiffID := int(diffs[len(diffs)-1].ID)
+				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID,expectedSecondMinDiffID))
+			})
+
+			It("sets minID to 0 if there are no diffs with given block range", func() {
+				mockDiffsRepository.GetFirstDiffIDErr = sql.ErrNoRows
+				mockDiffsRepository.GetNewDiffsDiffs = diffs
+				mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
+				err := storageWatcher.Execute()
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
+
+				expectedFirstMinDiffID := 0
+				expectedSecondMinDiffID := int(diffs[len(diffs)-1].ID)
+				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID,expectedSecondMinDiffID))
 			})
 		})
 

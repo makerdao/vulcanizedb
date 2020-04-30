@@ -30,7 +30,7 @@ type MockStorageDiffRepository struct {
 	GetNewDiffsPassedLimits                    []int
 	MarkCheckedPassedID                        int64
 	GetFirstDiffIDToReturn                     int64
-	GetFirstDiffErr                            error
+	GetFirstDiffIDErr                          error
 	GetFirstDiffBlockHeightPassed              int64
 }
 
@@ -61,5 +61,5 @@ func (repository *MockStorageDiffRepository) MarkChecked(id int64) error {
 
 func (repository *MockStorageDiffRepository) GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error) {
 	repository.GetFirstDiffBlockHeightPassed = blockHeight
-	return repository.GetFirstDiffIDToReturn, repository.GetFirstDiffErr
+	return repository.GetFirstDiffIDToReturn, repository.GetFirstDiffIDErr
 }
