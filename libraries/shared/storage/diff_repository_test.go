@@ -364,9 +364,14 @@ var _ = Describe("Storage diffs repository", func() {
 				fakePersistedDiff.Checked)
 			Expect(insertErr).NotTo(HaveOccurred())
 
+			var insertedDiffID int64
+			getInsertedDiffIDErr := db.Get(&insertedDiffID, `SELECT id FROM storage_diff LIMIT 1`)
+			Expect(getInsertedDiffIDErr).NotTo(HaveOccurred())
+
 			blockBeforeDiffBlockHeight := int64(fakeRawDiff.BlockHeight - 1)
-			_, diffErr := repo.GetFirstDiffIDForBlockHeight(blockBeforeDiffBlockHeight)
+			diffID, diffErr := repo.GetFirstDiffIDForBlockHeight(blockBeforeDiffBlockHeight)
 			Expect(diffErr).NotTo(HaveOccurred())
+			Expect(diffID).To(Equal(insertedDiffID))
 		})
 
 		It("returns an error if getting the diff fails", func() {

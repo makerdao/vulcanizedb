@@ -32,10 +32,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	ResultsLimit       = 500
-	BlocksBackFromHead = int64(500)
-)
+var ResultsLimit = 500
 
 type ErrHeaderMismatch struct {
 	dbHash   string
@@ -96,7 +93,7 @@ func (watcher StorageWatcher) Execute() error {
 }
 
 func (watcher StorageWatcher) getMinDiffID() (int, error) {
-	var minID int
+	var minID = 0
 	if watcher.DiffBlocksFromHeadOfChain != -1 {
 		mostRecentHeaderBlockNumber, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeaderBlockNumber()
 		if getHeaderErr != nil {
@@ -108,7 +105,10 @@ func (watcher StorageWatcher) getMinDiffID() (int, error) {
 			return 0, getDiffErr
 		}
 
-		minID = int(diffID - 1)
+		// We are subtracting an offset from the diffID because it will be passed to GetNewDiffs which returns diffs with ids
+		// greater than id passed in (minID), and we want to make sure that this diffID here is included in that collection
+		diffOffset := int64(1)
+		minID = int(diffID - diffOffset)
 	}
 
 	return minID, nil

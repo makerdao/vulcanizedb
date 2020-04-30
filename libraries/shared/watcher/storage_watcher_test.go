@@ -138,9 +138,9 @@ var _ = Describe("Storage Watcher", func() {
 
 		Describe("When the watcher is configured to skip old diffs", func() {
 			var diffs []types.PersistedDiff
+			var numberOfBlocksFromHeadOfChain = int64(500)
 
 			BeforeEach(func() {
-				numberOfBlocksFromHeadOfChain := int64(500)
 				storageWatcher = watcher.StorageWatcher{
 					HeaderRepository:          mockHeaderRepository,
 					StorageDiffRepository:     mockDiffsRepository,
@@ -176,7 +176,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
-				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(headerBlockNumber - watcher.BlocksBackFromHead))
+				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(headerBlockNumber - numberOfBlocksFromHeadOfChain))
 				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID, expectedSecondMinDiffID))
 			})
 
@@ -207,7 +207,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
-				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(headerBlockNumber - watcher.BlocksBackFromHead))
+				Expect(mockDiffsRepository.GetFirstDiffBlockHeightPassed).To(Equal(headerBlockNumber - numberOfBlocksFromHeadOfChain))
 				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID, expectedFirstMinDiffID))
 			})
 
@@ -222,7 +222,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				expectedFirstMinDiffID := 0
 				expectedSecondMinDiffID := int(diffs[len(diffs)-1].ID)
-				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID,expectedSecondMinDiffID))
+				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID, expectedSecondMinDiffID))
 			})
 
 			It("sets minID to 0 if there are no diffs with given block range", func() {
@@ -236,7 +236,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				expectedFirstMinDiffID := 0
 				expectedSecondMinDiffID := int(diffs[len(diffs)-1].ID)
-				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID,expectedSecondMinDiffID))
+				Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(expectedFirstMinDiffID, expectedSecondMinDiffID))
 			})
 		})
 
