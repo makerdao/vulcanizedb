@@ -50,6 +50,6 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 )
 
-replace github.com/ethereum/go-ethereum => github.com/makerdao/go-ethereum v1.5.10-0.20200508151415-a332a1649dff
+replace github.com/ethereum/go-ethereum => github.com/makerdao/go-ethereum v1.9.11-rc2
 
 replace gopkg.in/urfave/cli.v1 => gopkg.in/urfave/cli.v1 v1.20.0

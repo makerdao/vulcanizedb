@@ -94,7 +94,7 @@ func NewMethod(m abi.Method) Method {
 
 	return Method{
 		Name:   m.Name,
-		Const:  m.Constant,
+		Const:  m.Const,
 		Args:   inputs,
 		Return: outputs,
 	}
