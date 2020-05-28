@@ -17,8 +17,8 @@ package fetcher_test
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -31,7 +31,7 @@ import (
 var _ = Describe("Geth RPC Storage Fetcher", func() {
 	var (
 		streamer             *mocks.MockStoragediffStreamer
-		statediffPayloadChan chan statediff.Payload
+		statediffPayloadChan chan filters.Payload
 		statediffFetcher     fetcher.GethRpcStorageFetcher
 		storagediffChan      chan types.RawDiff
 		subscription         *fakes.MockSubscription
@@ -43,7 +43,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		BeforeEach(func() {
 			subscription = &fakes.MockSubscription{Errs: make(chan error)}
 			streamer = &mocks.MockStoragediffStreamer{ClientSubscription: subscription}
-			statediffPayloadChan = make(chan statediff.Payload, 1)
+			statediffPayloadChan = make(chan filters.Payload, 1)
 			statusWriter = fakes.MockStatusWriter{}
 			statediffFetcher = fetcher.NewGethRpcStorageFetcher(streamer, statediffPayloadChan, fetcher.OldGethPatch, &statusWriter)
 			storagediffChan = make(chan types.RawDiff)
@@ -65,7 +65,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		})
 
 		It("streams StatediffPayloads from a Geth RPC subscription", func(done Done) {
-			streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
+			streamer.SetPayloads([]filters.Payload{test_data.MockStatediffPayload})
 
 			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
@@ -95,8 +95,8 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			})
 
 			It("adds errors to error channel if decoding the state diff RLP fails", func(done Done) {
-				badStatediffPayload := statediff.Payload{}
-				streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+				badStatediffPayload := filters.Payload{}
+				streamer.SetPayloads([]filters.Payload{badStatediffPayload})
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
@@ -106,7 +106,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			})
 
 			It("adds parsed statediff payloads to the out channel for the old geth patch", func(done Done) {
-				streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
+				streamer.SetPayloads([]filters.Payload{test_data.MockStatediffPayload})
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
@@ -147,9 +147,9 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 			It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
 				accountDiffs := test_data.CreatedAccountDiffs
-				accountDiffs[0].Storage = []statediff.StorageDiff{test_data.StorageWithBadValue}
+				accountDiffs[0].Storage = []filters.StorageDiff{test_data.StorageWithBadValue}
 
-				stateDiff := statediff.StateDiff{
+				stateDiff := filters.StateDiff{
 					BlockNumber:     test_data.BlockNumber,
 					BlockHash:       common.HexToHash(test_data.BlockHash),
 					CreatedAccounts: accountDiffs,
@@ -158,10 +158,10 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 				stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
 				Expect(err).NotTo(HaveOccurred())
 
-				badStatediffPayload := statediff.Payload{
+				badStatediffPayload := filters.Payload{
 					StateDiffRlp: stateDiffRlp,
 				}
-				streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+				streamer.SetPayloads([]filters.Payload{badStatediffPayload})
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
@@ -176,7 +176,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		BeforeEach(func() {
 			subscription = &fakes.MockSubscription{Errs: make(chan error)}
 			streamer = &mocks.MockStoragediffStreamer{ClientSubscription: subscription}
-			statediffPayloadChan = make(chan statediff.Payload, 1)
+			statediffPayloadChan = make(chan filters.Payload, 1)
 			statusWriter = fakes.MockStatusWriter{}
 			statediffFetcher = fetcher.NewGethRpcStorageFetcher(streamer, statediffPayloadChan, fetcher.NewGethPatch, &statusWriter)
 			storagediffChan = make(chan types.RawDiff)
@@ -198,7 +198,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		})
 
 		It("streams StatediffPayloads from a Geth RPC subscription", func(done Done) {
-			streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
+			streamer.SetPayloads([]filters.Payload{test_data.MockStatediffPayload})
 
 			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
@@ -228,8 +228,8 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			})
 
 			It("adds errors to error channel if decoding the state diff RLP fails", func(done Done) {
-				badStatediffPayload := statediff.Payload{}
-				streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+				badStatediffPayload := filters.Payload{}
+				streamer.SetPayloads([]filters.Payload{badStatediffPayload})
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
@@ -239,7 +239,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			})
 
 			It("adds parsed statediff payloads to the out channel for the new geth patch", func(done Done) {
-				streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
+				streamer.SetPayloads([]filters.Payload{test_data.MockStatediffPayload})
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
@@ -280,9 +280,9 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 			It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
 				accountDiffs := test_data.CreatedAccountDiffs
-				accountDiffs[0].Storage = []statediff.StorageDiff{test_data.StorageWithBadValue}
+				accountDiffs[0].Storage = []filters.StorageDiff{test_data.StorageWithBadValue}
 
-				stateDiff := statediff.StateDiff{
+				stateDiff := filters.StateDiff{
 					BlockNumber:     test_data.BlockNumber,
 					BlockHash:       common.HexToHash(test_data.BlockHash),
 					CreatedAccounts: accountDiffs,
@@ -291,10 +291,10 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 				stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
 				Expect(err).NotTo(HaveOccurred())
 
-				badStatediffPayload := statediff.Payload{
+				badStatediffPayload := filters.Payload{
 					StateDiffRlp: stateDiffRlp,
 				}
-				streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+				streamer.SetPayloads([]filters.Payload{badStatediffPayload})
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 

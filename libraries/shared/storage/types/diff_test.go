@@ -22,8 +22,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
@@ -68,8 +68,8 @@ var _ = Describe("Storage row parsing", func() {
 
 	Describe("FromOldGethStateDiff", func() {
 		var (
-			accountDiff = statediff.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
-			stateDiff   = &statediff.StateDiff{
+			accountDiff = filters.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
+			stateDiff   = &filters.StateDiff{
 				BlockNumber: big.NewInt(rand.Int63()),
 				BlockHash:   fakes.FakeHash,
 			}
@@ -80,7 +80,7 @@ var _ = Describe("Storage row parsing", func() {
 			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
 			Expect(encodeErr).NotTo(HaveOccurred())
 
-			storageDiff := statediff.StorageDiff{
+			storageDiff := filters.StorageDiff{
 				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				Value: storageValueRlp,
 			}
@@ -104,7 +104,7 @@ var _ = Describe("Storage row parsing", func() {
 			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
 			Expect(encodeErr).NotTo(HaveOccurred())
 
-			storageDiff := statediff.StorageDiff{
+			storageDiff := filters.StorageDiff{
 				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				Value: storageValueRlp,
 			}
@@ -123,8 +123,8 @@ var _ = Describe("Storage row parsing", func() {
 
 	Describe("FromNewGethStateDiff", func() {
 		var (
-			accountDiff = statediff.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
-			stateDiff   = &statediff.StateDiff{
+			accountDiff = filters.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
+			stateDiff   = &filters.StateDiff{
 				BlockNumber: big.NewInt(rand.Int63()),
 				BlockHash:   fakes.FakeHash,
 			}
@@ -135,7 +135,7 @@ var _ = Describe("Storage row parsing", func() {
 			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
 			Expect(encodeErr).NotTo(HaveOccurred())
 
-			storageDiff := statediff.StorageDiff{
+			storageDiff := filters.StorageDiff{
 				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				Value: storageValueRlp,
 			}
@@ -159,7 +159,7 @@ var _ = Describe("Storage row parsing", func() {
 			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
 			Expect(encodeErr).NotTo(HaveOccurred())
 
-			storageDiff := statediff.StorageDiff{
+			storageDiff := filters.StorageDiff{
 				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				Value: storageValueRlp,
 			}

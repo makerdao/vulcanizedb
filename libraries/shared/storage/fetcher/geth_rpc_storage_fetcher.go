@@ -17,8 +17,8 @@ package fetcher
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/makerdao/vulcanizedb/pkg/fs"
@@ -33,13 +33,13 @@ const (
 )
 
 type GethRpcStorageFetcher struct {
-	statediffPayloadChan chan statediff.Payload
+	statediffPayloadChan chan filters.Payload
 	streamer             streamer.Streamer
 	gethVersion          GethPatchVersion
 	statusWriter         fs.StatusWriter
 }
 
-func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload, gethVersion GethPatchVersion, statusWriter fs.StatusWriter) GethRpcStorageFetcher {
+func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan filters.Payload, gethVersion GethPatchVersion, statusWriter fs.StatusWriter) GethRpcStorageFetcher {
 	return GethRpcStorageFetcher{
 		statediffPayloadChan: statediffPayloadChan,
 		streamer:             streamer,
@@ -69,7 +69,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 			errs <- err
 		case diff := <-ethStatediffPayloadChan:
 			logrus.Trace("received a statediff")
-			stateDiff := new(statediff.StateDiff)
+			stateDiff := new(filters.StateDiff)
 			decodeErr := rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
 			logrus.Tracef("received a statediff from block: %v", stateDiff.BlockNumber)
 			if decodeErr != nil {
@@ -97,7 +97,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 	}
 }
 
-func (fetcher GethRpcStorageFetcher) formatDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (types.RawDiff, error) {
+func (fetcher GethRpcStorageFetcher) formatDiff(account filters.AccountDiff, stateDiff *filters.StateDiff, storage filters.StorageDiff) (types.RawDiff, error) {
 	if fetcher.gethVersion == OldGethPatch {
 		return types.FromOldGethStateDiff(account, stateDiff, storage)
 	} else {
@@ -105,7 +105,7 @@ func (fetcher GethRpcStorageFetcher) formatDiff(account statediff.AccountDiff, s
 	}
 }
 
-func getAccountsFromDiff(stateDiff statediff.StateDiff) []statediff.AccountDiff {
+func getAccountsFromDiff(stateDiff filters.StateDiff) []filters.AccountDiff {
 	accounts := append(stateDiff.CreatedAccounts, stateDiff.UpdatedAccounts...)
 	return append(accounts, stateDiff.DeletedAccounts...)
 }
