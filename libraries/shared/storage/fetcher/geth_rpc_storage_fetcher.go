@@ -105,6 +105,5 @@ func (fetcher GethRpcStorageFetcher) formatDiff(account filters.AccountDiff, sta
 }
 
 func getAccountsFromDiff(stateDiff filters.StateDiff) []filters.AccountDiff {
-	accounts := append(stateDiff.CreatedAccounts, stateDiff.UpdatedAccounts...)
-	return append(accounts, stateDiff.DeletedAccounts...)
+	return stateDiff.UpdatedAccounts
 }

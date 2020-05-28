@@ -40,16 +40,12 @@ var (
 	storageWithSmallValue   = []filters.StorageDiff{{
 		Key:   StorageKey,
 		Value: SmallStorageValueRlp,
-		Path:  StoragePath,
-		Proof: [][]byte{},
 	}}
 	LargeStorageValue            = common.Hex2Bytes("00191b53778c567b14b50ba0000")
 	LargeStorageValueRlp, rlpErr = rlp.EncodeToBytes(LargeStorageValue)
 	storageWithLargeValue        = []filters.StorageDiff{{
 		Key:   StorageKey,
 		Value: LargeStorageValueRlp,
-		Path:  StoragePath,
-		Proof: [][]byte{},
 	}}
 	EmptyStorage        = make([]filters.StorageDiff, 0)
 	StorageWithBadValue = filters.StorageDiff{
@@ -69,32 +65,29 @@ var (
 		Root:     ContractRoot,
 		CodeHash: CodeHash,
 	}
-	valueBytes, _       = rlp.EncodeToBytes(testAccount)
-	CreatedAccountDiffs = []filters.AccountDiff{
-		{
-			Key:     ContractLeafKey.Bytes(),
-			Value:   valueBytes,
-			Storage: storageWithSmallValue,
-		},
+	valueBytes, _    = rlp.EncodeToBytes(testAccount)
+	testAccountDiff1 = filters.AccountDiff{
+		Key:     ContractLeafKey.Bytes(),
+		Value:   valueBytes,
+		Storage: storageWithSmallValue,
 	}
-
-	UpdatedAccountDiffs = []filters.AccountDiff{{
+	testAccountDiff2 = filters.AccountDiff{
 		Key:     AnotherContractLeafKey.Bytes(),
 		Value:   valueBytes,
 		Storage: storageWithLargeValue,
-	}}
-
-	DeletedAccountDiffs = []filters.AccountDiff{{
+	}
+	testAccountDiff3 = filters.AccountDiff{
 		Key:     AnotherContractLeafKey.Bytes(),
 		Value:   valueBytes,
 		Storage: storageWithSmallValue,
-	}}
+	}
+	CreatedAccountDiffs = []filters.AccountDiff{testAccountDiff1}
+	UpdatedAccountDiffs = []filters.AccountDiff{testAccountDiff1, testAccountDiff2, testAccountDiff3}
+	DeletedAccountDiffs = []filters.AccountDiff{testAccountDiff3}
 
 	MockStateDiff = filters.StateDiff{
 		BlockNumber:     BlockNumber,
 		BlockHash:       common.HexToHash(BlockHash),
-		CreatedAccounts: CreatedAccountDiffs,
-		DeletedAccounts: DeletedAccountDiffs,
 		UpdatedAccounts: UpdatedAccountDiffs,
 	}
 	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
@@ -118,7 +111,6 @@ var (
 	MockBlockRlp, _ = rlp.EncodeToBytes(MockBlock)
 
 	MockStatediffPayload = filters.Payload{
-		BlockRlp:     MockBlockRlp,
 		StateDiffRlp: MockStateDiffBytes,
 	}
 )
