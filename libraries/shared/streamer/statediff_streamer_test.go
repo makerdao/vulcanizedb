@@ -15,7 +15,7 @@
 package streamer_test
 
 import (
-	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
@@ -26,7 +26,7 @@ var _ = Describe("StateDiff Streamer", func() {
 	It("subscribes to the geth statediff service", func() {
 		client := &fakes.MockRpcClient{}
 		streamer := streamer.NewStateDiffStreamer(client)
-		payloadChan := make(chan statediff.Payload)
+		payloadChan := make(chan filters.Payload)
 		_, err := streamer.Stream(payloadChan)
 		Expect(err).NotTo(HaveOccurred())
 
