@@ -152,7 +152,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 				stateDiff := filters.StateDiff{
 					BlockNumber:     test_data.BlockNumber,
 					BlockHash:       common.HexToHash(test_data.BlockHash),
-					CreatedAccounts: accountDiffs,
+					UpdatedAccounts: accountDiffs,
 				}
 
 				stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
@@ -285,7 +285,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 				stateDiff := filters.StateDiff{
 					BlockNumber:     test_data.BlockNumber,
 					BlockHash:       common.HexToHash(test_data.BlockHash),
-					CreatedAccounts: accountDiffs,
+					UpdatedAccounts: accountDiffs,
 				}
 
 				stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
