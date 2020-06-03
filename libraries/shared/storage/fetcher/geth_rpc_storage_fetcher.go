@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/test_data/old_geth_patches"
 	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/sirupsen/logrus"
 )
@@ -67,19 +68,17 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 		case err := <-clientSubscription.Err():
 			logrus.Errorf("error with client subscription: %s", err.Error())
 			errs <- err
-		case diff := <-ethStatediffPayloadChan:
-			logrus.Trace("received a statediff")
-			stateDiff := new(filters.StateDiff)
-			decodeErr := rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
-			logrus.Tracef("received a statediff from block: %v", stateDiff.BlockNumber)
+		case diffPayload := <-ethStatediffPayloadChan:
+			logrus.Trace("received a statediff payload")
+			stateDiff, decodeErr := fetcher.decodeStateDiffRlpFromPayload(diffPayload)
 			if decodeErr != nil {
 				logrus.Warn("Error decoding state diff into RLP: ", decodeErr)
 				errs <- decodeErr
 			}
+			logrus.Tracef("received a statediff from block: %v", stateDiff.BlockNumber)
 
-			accounts := getAccountsFromDiff(*stateDiff)
-			logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(accounts), stateDiff.BlockNumber))
-			for _, account := range accounts {
+			logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(stateDiff.UpdatedAccounts), stateDiff.BlockNumber))
+			for _, account := range stateDiff.UpdatedAccounts {
 				logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
 				for _, accountStorage := range account.Storage {
 					diff, formatErr := fetcher.formatDiff(account, stateDiff, accountStorage)
@@ -105,6 +104,54 @@ func (fetcher GethRpcStorageFetcher) formatDiff(account filters.AccountDiff, sta
 	}
 }
 
+func (fetcher GethRpcStorageFetcher) decodeStateDiffRlpFromPayload(payload filters.Payload) (*filters.StateDiff, error) {
+	oldPatchStateDiff := new(old_geth_patches.StateDiffOldPatch)
+	decodeErr := rlp.DecodeBytes(payload.StateDiffRlp, oldPatchStateDiff)
+	if decodeErr != nil {
+		return &filters.StateDiff{}, decodeErr
+	}
+	stateDiff := convertToNewStateDiff(*oldPatchStateDiff)
+	return &stateDiff, nil
+}
+
 func getAccountsFromDiff(stateDiff filters.StateDiff) []filters.AccountDiff {
 	return stateDiff.UpdatedAccounts
+}
+
+func convertToNewStateDiff(oldStateDiff old_geth_patches.StateDiffOldPatch) filters.StateDiff {
+	accounts := append(oldStateDiff.UpdatedAccounts, oldStateDiff.CreatedAccounts...)
+	accounts = append(accounts, oldStateDiff.DeletedAccounts...)
+	convertedAccounts := convertToNewAccountDiff(accounts)
+	return filters.StateDiff{
+		BlockNumber:     oldStateDiff.BlockNumber,
+		BlockHash:       oldStateDiff.BlockHash,
+		UpdatedAccounts: convertedAccounts,
+	}
+}
+
+func convertToNewAccountDiff(oldAccountDiffs []old_geth_patches.AccountDiffOldPatch) []filters.AccountDiff {
+	var accounts []filters.AccountDiff
+	for _, account := range oldAccountDiffs {
+		newStorage := convertToNewStorageDiff(account.Storage)
+		newAccount := filters.AccountDiff{
+			Key:     account.Key,
+			Value:   account.Value,
+			Storage: newStorage,
+		}
+		accounts = append(accounts, newAccount)
+
+	}
+	return accounts
+}
+
+func convertToNewStorageDiff(oldStorageDiffs []old_geth_patches.StorageDiffOldPatch) []filters.StorageDiff {
+	var storageDiffs []filters.StorageDiff
+	for _, storage := range oldStorageDiffs {
+		newStorage := filters.StorageDiff{
+			Key:   storage.Key,
+			Value: storage.Value,
+		}
+		storageDiffs = append(storageDiffs, newStorage)
+	}
+	return storageDiffs
 }
