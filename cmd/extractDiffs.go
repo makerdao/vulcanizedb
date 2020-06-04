@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
@@ -10,6 +11,11 @@ import (
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+)
+
+var (
+	watchedStorageAddresses         []string
+	watchedStorageAddressesFlagName = "watchedStorageAddresses"
 )
 
 // extractDiffsCmd represents the extractDiffs command
@@ -27,6 +33,7 @@ var extractDiffsCmd = &cobra.Command{
 }
 
 func init() {
+	extractDiffsCmd.Flags().StringSliceVarP(&watchedStorageAddresses, watchedStorageAddressesFlagName, "w", []string{}, "contract addresses to subscribe to for storage diffs")
 	rootCmd.AddCommand(extractDiffsCmd)
 }
 
@@ -58,7 +65,7 @@ func extractDiffs() {
 	case "new-geth-with-filter":
 		logrus.Info("Using new geth patch with filters event system")
 		_, ethClient := getClients()
-		filterQuery := ethereum.FilterQuery{}
+		filterQuery := createFilterQuery()
 		stateDiffStreamer := streamer.NewEthStateChangeStreamer(ethClient, filterQuery)
 		payloadChan := make(chan filters.Payload)
 		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatchWithFilter)
@@ -76,5 +83,16 @@ func extractDiffs() {
 	err := extractor.ExtractDiffs()
 	if err != nil {
 		LogWithCommand.Fatalf("extracting diffs failed: %s", err.Error())
+	}
+}
+
+func createFilterQuery() ethereum.FilterQuery {
+	var addresses []common.Address
+	for _, addressString := range watchedStorageAddresses {
+		addresses = append(addresses, common.HexToAddress(addressString))
+	}
+
+	return ethereum.FilterQuery{
+		Addresses: addresses,
 	}
 }
