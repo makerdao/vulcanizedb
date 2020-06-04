@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 )
+
 var (
 	storageWithSmallValue = []StorageDiffOldPatch{{
 		Key:   test_data.StorageKey,
@@ -63,8 +64,6 @@ var (
 		CreatedAccounts: []AccountDiffOldPatch{testAccountDiffWithBadStorageValue},
 	}
 )
-
-
 
 //Types for old patches
 

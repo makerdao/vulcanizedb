@@ -26,13 +26,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type GethPatchVersion int
-
-const (
-	OldGethPatch GethPatchVersion = iota
-	NewGethPatch
-)
-
 type GethRpcStorageFetcher struct {
 	statediffPayloadChan chan filters.Payload
 	streamer             streamer.Streamer
