@@ -16,7 +16,10 @@ package fetcher
 
 import (
 	"fmt"
+	"io/ioutil"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -63,37 +66,83 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 			errs <- err
 		case diffPayload := <-ethStatediffPayloadChan:
 			logrus.Trace("received a statediff payload")
-			stateDiff, decodeErr := fetcher.decodeStateDiffRlpFromPayload(diffPayload)
-			if decodeErr != nil {
-				logrus.Warn("Error decoding state diff into RLP: ", decodeErr)
-				errs <- decodeErr
-			}
-			logrus.Tracef("received a statediff from block: %v", stateDiff.BlockNumber)
 
-			logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(stateDiff.UpdatedAccounts), stateDiff.BlockNumber))
-			for _, account := range stateDiff.UpdatedAccounts {
-				logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
-				for _, accountStorage := range account.Storage {
-					diff, formatErr := fetcher.formatDiff(account, stateDiff, accountStorage)
-					logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
-						diff.HashedAddress.Hex(), diff.BlockHeight, diff.StorageKey.Hex(), diff.StorageValue.Hex())
-					if formatErr != nil {
-						errs <- formatErr
-					}
-
-					out <- diff
-				}
+			switch fetcher.gethVersion {
+			case OldGethPatch:
+				fetcher.handleDiffsFromOldGethPatch(diffPayload, out, errs)
+			case NewGethPatchWithService:
+				fetcher.handleDiffsFromNewGethPatchWithService(diffPayload, out, errs)
+			case NewGethPatchWithFilter:
+				fetcher.handleDiffsFromNewGethPatchWithFilter(diffPayload, out, errs)
 			}
 		}
-
 	}
 }
 
-func (fetcher GethRpcStorageFetcher) formatDiff(account filters.AccountDiff, stateDiff *filters.StateDiff, storage filters.StorageDiff) (types.RawDiff, error) {
-	if fetcher.gethVersion == OldGethPatch {
-		return types.FromOldGethStateDiff(account, stateDiff, storage)
-	} else {
-		return types.FromNewGethStateDiff(account, stateDiff, storage)
+func (fetcher GethRpcStorageFetcher) handleDiffsFromOldGethPatch(payload filters.Payload, out chan<- types.RawDiff, errs chan<- error) {
+	stateDiff, decodeErr := fetcher.decodeStateDiffRlpFromPayloadForOldPatches(payload)
+	if decodeErr != nil {
+		errs <- decodeErr
+	}
+
+	for _, account := range stateDiff.UpdatedAccounts {
+		logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
+
+		for _, accountStorage := range account.Storage {
+			rawDiff, formatErr := types.FromOldGethStateDiff(account, stateDiff, accountStorage)
+			if formatErr != nil {
+				errs <- formatErr
+			}
+
+			logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
+				rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
+			out <- rawDiff
+		}
+	}
+}
+
+func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithService(payload filters.Payload, out chan<- types.RawDiff, errs chan<- error) {
+	stateDiff, decodeErr := fetcher.decodeStateDiffRlpFromPayloadForOldPatches(payload)
+	if decodeErr != nil {
+		errs <- decodeErr
+	}
+
+	for _, account := range stateDiff.UpdatedAccounts {
+		logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
+
+		for _, accountStorage := range account.Storage {
+			rawDiff, formatErr := types.FromNewGethStateDiff(account, stateDiff, accountStorage)
+			if formatErr != nil {
+				errs <- formatErr
+			}
+
+			logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
+				rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
+			out <- rawDiff
+		}
+	}
+}
+
+func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithFilter(payload filters.Payload, out chan<- types.RawDiff, errs chan<- error) {
+	var stateDiff filters.StateDiff
+	decodeErr := rlp.DecodeBytes(payload.StateDiffRlp, &stateDiff)
+	if decodeErr != nil {
+		errs <- decodeErr
+	}
+
+	for _, account := range stateDiff.UpdatedAccounts {
+		logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
+
+		for _, accountStorage := range account.Storage {
+			rawDiff, formatErr := types.FromNewGethStateDiff(account, &stateDiff, accountStorage)
+			if formatErr != nil {
+				errs <- formatErr
+			}
+
+			logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
+				rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
+			out <- rawDiff
+		}
 	}
 }
 
@@ -111,7 +160,7 @@ func (fetcher GethRpcStorageFetcher) decodeStateDiffRlpFromPayload(payload filte
 }
 
 func (fetcher GethRpcStorageFetcher) decodeStateDiffRlpFromPayloadForOldPatches(payload filters.Payload) (*filters.StateDiff, error) {
-	oldPatchStateDiff := new(old_geth_patches.StateDiffOldPatch)
+	oldPatchStateDiff := new(StateDiffOldPatch)
 	decodeErr := rlp.DecodeBytes(payload.StateDiffRlp, oldPatchStateDiff)
 	if decodeErr != nil {
 		return &filters.StateDiff{}, decodeErr
@@ -124,7 +173,7 @@ func getAccountsFromDiff(stateDiff filters.StateDiff) []filters.AccountDiff {
 	return stateDiff.UpdatedAccounts
 }
 
-func convertToNewStateDiff(oldStateDiff old_geth_patches.StateDiffOldPatch) filters.StateDiff {
+func convertToNewStateDiff(oldStateDiff StateDiffOldPatch) filters.StateDiff {
 	accounts := append(oldStateDiff.UpdatedAccounts, oldStateDiff.CreatedAccounts...)
 	accounts = append(accounts, oldStateDiff.DeletedAccounts...)
 	convertedAccounts := convertToNewAccountDiff(accounts)
@@ -135,7 +184,7 @@ func convertToNewStateDiff(oldStateDiff old_geth_patches.StateDiffOldPatch) filt
 	}
 }
 
-func convertToNewAccountDiff(oldAccountDiffs []old_geth_patches.AccountDiffOldPatch) []filters.AccountDiff {
+func convertToNewAccountDiff(oldAccountDiffs []AccountDiffOldPatch) []filters.AccountDiff {
 	var accounts []filters.AccountDiff
 	for _, account := range oldAccountDiffs {
 		newStorage := convertToNewStorageDiff(account.Storage)
@@ -150,7 +199,7 @@ func convertToNewAccountDiff(oldAccountDiffs []old_geth_patches.AccountDiffOldPa
 	return accounts
 }
 
-func convertToNewStorageDiff(oldStorageDiffs []old_geth_patches.StorageDiffOldPatch) []filters.StorageDiff {
+func convertToNewStorageDiff(oldStorageDiffs []StorageDiffOldPatch) []filters.StorageDiff {
 	var storageDiffs []filters.StorageDiff
 	for _, storage := range oldStorageDiffs {
 		newStorage := filters.StorageDiff{
@@ -160,4 +209,32 @@ func convertToNewStorageDiff(oldStorageDiffs []old_geth_patches.StorageDiffOldPa
 		storageDiffs = append(storageDiffs, newStorage)
 	}
 	return storageDiffs
+}
+
+type StateDiffOldPatch struct {
+	BlockNumber     *big.Int              `json:"blockNumber"     gencodec:"required"`
+	BlockHash       common.Hash           `json:"blockHash"       gencodec:"required"`
+	CreatedAccounts []AccountDiffOldPatch `json:"createdAccounts"`
+	DeletedAccounts []AccountDiffOldPatch `json:"deletedAccounts"`
+	UpdatedAccounts []AccountDiffOldPatch `json:"updatedAccounts" gencodec:"required"`
+
+	encoded []byte
+	err     error
+}
+
+type AccountDiffOldPatch struct {
+	Leaf    bool                  `json:"leaf"`
+	Key     []byte                `json:"key"         gencodec:"required"`
+	Value   []byte                `json:"value"       gencodec:"required"`
+	Proof   [][]byte              `json:"proof"`
+	Path    []byte                `json:"path"`
+	Storage []StorageDiffOldPatch `json:"storage"     gencodec:"required"`
+}
+
+type StorageDiffOldPatch struct {
+	Leaf  bool     `json:"leaf"`
+	Key   []byte   `json:"key"         gencodec:"required"`
+	Value []byte   `json:"value"       gencodec:"required"`
+	Proof [][]byte `json:"proof"`
+	Path  []byte   `json:"path"`
 }
