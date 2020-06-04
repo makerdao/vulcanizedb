@@ -97,6 +97,19 @@ func (fetcher GethRpcStorageFetcher) formatDiff(account filters.AccountDiff, sta
 }
 
 func (fetcher GethRpcStorageFetcher) decodeStateDiffRlpFromPayload(payload filters.Payload) (*filters.StateDiff, error) {
+	if fetcher.gethVersion == NewGethPatchWithFilter {
+		var stateDiff filters.StateDiff
+		decodeErr := rlp.DecodeBytes(payload.StateDiffRlp, &stateDiff)
+		if decodeErr != nil {
+			return &filters.StateDiff{}, decodeErr
+		}
+		return &stateDiff, nil
+	} else {
+		return fetcher.decodeStateDiffRlpFromPayloadForOldPatches(payload)
+	}
+}
+
+func (fetcher GethRpcStorageFetcher) decodeStateDiffRlpFromPayloadForOldPatches(payload filters.Payload) (*filters.StateDiff, error) {
 	oldPatchStateDiff := new(old_geth_patches.StateDiffOldPatch)
 	decodeErr := rlp.DecodeBytes(payload.StateDiffRlp, oldPatchStateDiff)
 	if decodeErr != nil {
