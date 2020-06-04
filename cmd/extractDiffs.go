@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
@@ -36,21 +37,27 @@ func extractDiffs() {
 
 	// initialize fetcher
 	var storageFetcher fetcher.IStorageFetcher
+	logrus.Debug("fetching storage diffs from geth")
 	switch storageDiffsSource {
 	case "geth":
 		logrus.Info("Using original geth patch")
-		logrus.Debug("fetching storage diffs from geth pub sub")
 		rpcClient, _ := getClients()
 		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 		payloadChan := make(chan filters.Payload)
 		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.OldGethPatch)
 	case "new-geth":
-		logrus.Info("Using new geth patch")
-		logrus.Debug("fetching storage diffs from geth pub sub")
+		logrus.Info("Using new geth patch with statediff service")
 		rpcClient, _ := getClients()
 		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 		payloadChan := make(chan filters.Payload)
-		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatch)
+		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatchWithService)
+	case "new-geth-with-filter":
+		logrus.Info("Using new geth patch with filters event system")
+		_, ethClient := getClients()
+		filterQuery := ethereum.FilterQuery{}
+		stateDiffStreamer := streamer.NewEthStateChangeStreamer(ethClient, filterQuery)
+		payloadChan := make(chan filters.Payload)
+		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatchWithFilter)
 	default:
 		logrus.Debug("fetching storage diffs from csv")
 		tailer := fs.FileTailer{Path: storageDiffsPath}
