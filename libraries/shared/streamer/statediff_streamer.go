@@ -15,6 +15,9 @@
 package streamer
 
 import (
+	"context"
+
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/sirupsen/logrus"
@@ -37,4 +40,21 @@ func NewStateDiffStreamer(client core.RpcClient) StateDiffStreamer {
 	return StateDiffStreamer{
 		client: client,
 	}
+}
+
+type EthStateChangeStreamer struct {
+	ethClient   core.EthClient
+	filterQuery ethereum.FilterQuery
+}
+
+func NewEthStateChangeStreamer(ethClient core.EthClient, filterQuery ethereum.FilterQuery) EthStateChangeStreamer {
+	return EthStateChangeStreamer{
+		ethClient:   ethClient,
+		filterQuery: filterQuery,
+	}
+}
+
+func (streamer *EthStateChangeStreamer) Stream(payloadChan chan filters.Payload) (core.Subscription, error) {
+	logrus.Info("streaming diffs from geth")
+	return streamer.ethClient.SubscribeNewStateChanges(context.Background(), streamer.filterQuery, payloadChan)
 }

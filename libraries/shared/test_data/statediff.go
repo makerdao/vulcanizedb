@@ -65,8 +65,8 @@ var (
 		Root:     ContractRoot,
 		CodeHash: CodeHash,
 	}
-	AccountValueBytes, _    = rlp.EncodeToBytes(testAccount)
-	testAccountDiff1 = filters.AccountDiff{
+	AccountValueBytes, _ = rlp.EncodeToBytes(testAccount)
+	testAccountDiff1     = filters.AccountDiff{
 		Key:     ContractLeafKey.Bytes(),
 		Value:   AccountValueBytes,
 		Storage: storageWithSmallValue,
