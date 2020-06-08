@@ -48,7 +48,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		//  - StateDiffs includes CreatedAccounts and DeletedAccounts fields
 		//  - AccountDiffs include Leaf, Proof and Path fields
 		//  - StorageDiffs include Leaf, Proof and Path fields
-		//  - So the StateDiffRlp is being decoded into temporary structs that match these data structures.
+		//  - the StateDiffRlp is being decoded into temporary structs that match these data structures
 		//  - diffs are formatted with the FromOldGethStateDiff method
 		BeforeEach(func() {
 			subscription = &fakes.MockSubscription{Errs: make(chan error)}
@@ -118,7 +118,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-				Expect(<-errorChan).To(MatchError("EOF"))
+				Expect(<-errorChan).To(MatchError("error decoding storage diff from OldGethPatch payload: EOF"))
 
 				close(done)
 			})
@@ -173,8 +173,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-				errFromChan := <-errorChan
-				Expect(errFromChan.Error()).To(MatchRegexp("rlp: input contains more than one value"))
+				Expect(<-errorChan).To(MatchError(rlp.ErrMoreThanOneValue))
 
 				close(done)
 			})
@@ -182,11 +181,11 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 	})
 
 	Describe("StorageFetcher for updated geth patch with statediff service", func() {
-		// This tests fetching diff payloads from the original geth patch: https://github.com/makerdao/go-ethereum/tree/simplify-diffing-rebase-with-geth-master
+		// This tests fetching diff payloads from the simplified geth patch: https://github.com/makerdao/go-ethereum/tree/simplify-diffing-rebase-with-geth-master
 		//  - StateDiffs includes CreatedAccounts and DeletedAccounts fields
 		//  - AccountDiffs include Leaf, Proof and Path fields
 		//  - StorageDiffs include Leaf, Proof and Path fields
-		//  - So the StateDiffRlp is being decoded into temporary structs that match these data structures.
+		//  - the StateDiffRlp is being decoded into temporary structs that match these data structures
 		//  - diffs are formatted with the FromNewGethStateDiff method
 		BeforeEach(func() {
 			subscription = &fakes.MockSubscription{Errs: make(chan error)}
@@ -256,7 +255,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-				Expect(<-errorChan).To(MatchError("EOF"))
+				Expect(<-errorChan).To(MatchError("error decoding storage diff from NewGethPatchWithService payload: EOF"))
 
 				close(done)
 			})
@@ -312,8 +311,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-				errFromChan := <-errorChan
-				Expect(errFromChan.Error()).To(MatchRegexp("rlp: input contains more than one value"))
+				Expect(<-errorChan).To(MatchError(rlp.ErrMoreThanOneValue))
 
 				close(done)
 			})
@@ -390,8 +388,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-				Expect(<-errorChan).To(MatchError("EOF"))
-
+				Expect(<-errorChan).To(MatchError("error decoding storage diff from NewGethPatchWithFilter payload: EOF"))
 				close(done)
 			})
 
@@ -446,8 +443,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-				errFromChan := <-errorChan
-				Expect(errFromChan.Error()).To(MatchRegexp("rlp: input contains more than one value"))
+				Expect(<-errorChan).To(MatchError(rlp.ErrMoreThanOneValue))
 
 				close(done)
 			})
