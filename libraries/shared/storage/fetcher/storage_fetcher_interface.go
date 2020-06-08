@@ -26,6 +26,10 @@ const (
 	NewGethPatchWithFilter
 )
 
+func (g GethPatchVersion) String() string {
+	return [...]string{"OldGethPatch", "NewGethPatchWithService", "NewGethPatchWithFilter"}[g]
+}
+
 type IStorageFetcher interface {
 	FetchStorageDiffs(out chan<- types.RawDiff, errs chan<- error)
 }

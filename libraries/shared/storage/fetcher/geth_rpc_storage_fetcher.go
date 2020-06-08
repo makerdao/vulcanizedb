@@ -82,7 +82,8 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 func (fetcher GethRpcStorageFetcher) handleDiffsFromOldGethPatch(payload filters.Payload, out chan<- types.RawDiff, errs chan<- error) {
 	stateDiff, decodeErr := fetcher.decodeStateDiffRlpFromPayloadForOldPatches(payload)
 	if decodeErr != nil {
-		errs <- decodeErr
+		errs <- fmt.Errorf("error decoding storage diff from %s payload: %w", fetcher.gethVersion, decodeErr)
+		return
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
@@ -104,7 +105,8 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromOldGethPatch(payload filters
 func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithService(payload filters.Payload, out chan<- types.RawDiff, errs chan<- error) {
 	stateDiff, decodeErr := fetcher.decodeStateDiffRlpFromPayloadForOldPatches(payload)
 	if decodeErr != nil {
-		errs <- decodeErr
+		errs <- fmt.Errorf("error decoding storage diff from %s payload: %w", fetcher.gethVersion, decodeErr)
+		return
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
@@ -127,7 +129,8 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithFilter(paylo
 	var stateDiff filters.StateDiff
 	decodeErr := rlp.DecodeBytes(payload.StateDiffRlp, &stateDiff)
 	if decodeErr != nil {
-		errs <- decodeErr
+		errs <- fmt.Errorf("error decoding storage diff from %s payload: %w", fetcher.gethVersion, decodeErr)
+		return
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
@@ -146,31 +149,14 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithFilter(paylo
 	}
 }
 
-func (fetcher GethRpcStorageFetcher) decodeStateDiffRlpFromPayload(payload filters.Payload) (*filters.StateDiff, error) {
-	if fetcher.gethVersion == NewGethPatchWithFilter {
-		var stateDiff filters.StateDiff
-		decodeErr := rlp.DecodeBytes(payload.StateDiffRlp, &stateDiff)
-		if decodeErr != nil {
-			return &filters.StateDiff{}, decodeErr
-		}
-		return &stateDiff, nil
-	} else {
-		return fetcher.decodeStateDiffRlpFromPayloadForOldPatches(payload)
-	}
-}
-
 func (fetcher GethRpcStorageFetcher) decodeStateDiffRlpFromPayloadForOldPatches(payload filters.Payload) (*filters.StateDiff, error) {
 	oldPatchStateDiff := new(StateDiffOldPatch)
 	decodeErr := rlp.DecodeBytes(payload.StateDiffRlp, oldPatchStateDiff)
 	if decodeErr != nil {
-		return &filters.StateDiff{}, decodeErr
+		return nil, decodeErr
 	}
 	stateDiff := convertToNewStateDiff(*oldPatchStateDiff)
 	return &stateDiff, nil
-}
-
-func getAccountsFromDiff(stateDiff filters.StateDiff) []filters.AccountDiff {
-	return stateDiff.UpdatedAccounts
 }
 
 func convertToNewStateDiff(oldStateDiff StateDiffOldPatch) filters.StateDiff {
