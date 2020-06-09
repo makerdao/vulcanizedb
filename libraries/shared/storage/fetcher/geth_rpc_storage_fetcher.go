@@ -45,6 +45,10 @@ func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan c
 	}
 }
 
+var (
+	processingDiffsLogString = "processing %d storage diffs for account %s using %s"
+	addingDiffsLogString = "adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v"
+)
 func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff, errs chan<- error) {
 	ethStatediffPayloadChan := fetcher.statediffPayloadChan
 	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
@@ -87,16 +91,14 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromOldGethPatch(payload filters
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
-		logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
-
+		logrus.Trace(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
 		for _, accountStorage := range account.Storage {
 			rawDiff, formatErr := types.FromOldGethStateDiff(account, stateDiff, accountStorage)
 			if formatErr != nil {
 				errs <- formatErr
 			}
 
-			logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
-				rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
+			logrus.Tracef(addingDiffsLogString, rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
 			out <- rawDiff
 		}
 	}
@@ -110,16 +112,14 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithService(payl
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
-		logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
-
+		logrus.Trace(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
 		for _, accountStorage := range account.Storage {
 			rawDiff, formatErr := types.FromNewGethStateDiff(account, stateDiff, accountStorage)
 			if formatErr != nil {
 				errs <- formatErr
 			}
 
-			logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
-				rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
+			logrus.Tracef(addingDiffsLogString, rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
 			out <- rawDiff
 		}
 	}
@@ -134,16 +134,14 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithFilter(paylo
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
-		logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
-
+		logrus.Trace(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
 		for _, accountStorage := range account.Storage {
 			rawDiff, formatErr := types.FromNewGethStateDiff(account, &stateDiff, accountStorage)
 			if formatErr != nil {
 				errs <- formatErr
 			}
 
-			logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
-				rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
+			logrus.Tracef(addingDiffsLogString, rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
 			out <- rawDiff
 		}
 	}
