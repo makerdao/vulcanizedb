@@ -88,7 +88,7 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromOldGethPatch(payload filters
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
-		logrus.Trace(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
+		logrus.Info(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
 		for _, accountStorage := range account.Storage {
 			rawDiff, formatErr := types.FromOldGethStateDiff(account, stateDiff, accountStorage)
 			if formatErr != nil {
@@ -109,7 +109,7 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithService(payl
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
-		logrus.Trace(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
+		logrus.Info(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
 		for _, accountStorage := range account.Storage {
 			rawDiff, formatErr := types.FromNewGethStateDiff(account, stateDiff, accountStorage)
 			if formatErr != nil {
@@ -131,7 +131,7 @@ func (fetcher GethRpcStorageFetcher) handleDiffsFromNewGethPatchWithFilter(paylo
 	}
 
 	for _, account := range stateDiff.UpdatedAccounts {
-		logrus.Trace(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
+		logrus.Info(fmt.Sprintf(processingDiffsLogString, len(account.Storage), common.Bytes2Hex(account.Key), fetcher.gethVersion))
 		for _, accountStorage := range account.Storage {
 			rawDiff, formatErr := types.FromNewGethStateDiff(account, &stateDiff, accountStorage)
 			if formatErr != nil {
