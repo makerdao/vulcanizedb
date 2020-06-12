@@ -10,9 +10,9 @@ type IStatusWriter interface {
 }
 
 type StatusWriter struct {
-	file string
+	file    string
 	message []byte
-	perm os.FileMode
+	perm    os.FileMode
 }
 
 func NewStatusWriter(file string, message []byte) StatusWriter {

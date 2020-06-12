@@ -8,4 +8,3 @@ func (w *MockStatusWriter) Write() error {
 	w.WriteCalled = true
 	return nil
 }
-

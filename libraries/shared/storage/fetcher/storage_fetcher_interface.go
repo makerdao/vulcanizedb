@@ -21,3 +21,5 @@ import (
 type IStorageFetcher interface {
 	FetchStorageDiffs(out chan<- types.RawDiff, errs chan<- error)
 }
+
+var ConnectionFile = "/tmp/connection"
