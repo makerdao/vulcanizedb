@@ -21,14 +21,14 @@ import (
 
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
-	"github.com/makerdao/vulcanizedb/pkg/file_system"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/sirupsen/logrus"
 )
 
-func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64, statusWriter file_system.IStatusWriter) (int, error) {
+func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64, statusWriter fs.StatusWriter) (int, error) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		return 0, fmt.Errorf("error getting last block: %s", err.Error())
+		return 0, fmt.Errorf("error getting last block: %w", err)
 	}
 
 	writeErr := statusWriter.Write()

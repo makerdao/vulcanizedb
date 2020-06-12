@@ -84,7 +84,7 @@ var _ = Describe("Populating headers", func() {
 		_, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1, &statusWriter)
 
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(MatchRegexp("error getting last block: failed"))
+		Expect(err).To(MatchError(fakes.FakeError))
 		Expect(statusWriter.WriteCalled).To(BeFalse())
 	})
 })

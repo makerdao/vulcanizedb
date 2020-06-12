@@ -26,7 +26,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
-	"github.com/makerdao/vulcanizedb/pkg/file_system"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,10 +39,10 @@ type EventWatcher struct {
 	ExpectedDelegatorError       error
 	MaxConsecutiveUnexpectedErrs int
 	RetryInterval                time.Duration
-	StatusWriter                 file_system.IStatusWriter
+	StatusWriter                 fs.StatusWriter
 }
 
-func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExtractor, delegator logs.ILogDelegator, maxConsecutiveUnexpectedErrs int, retryInterval time.Duration, statusWriter file_system.IStatusWriter) EventWatcher {
+func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExtractor, delegator logs.ILogDelegator, maxConsecutiveUnexpectedErrs int, retryInterval time.Duration, statusWriter fs.StatusWriter) EventWatcher {
 	return EventWatcher{
 		blockChain:                   bc,
 		db:                           db,

@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/makerdao/vulcanizedb/pkg/file_system"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 )
 
 var (
@@ -96,7 +96,7 @@ func ParseAbi(abiString string) (abi.ABI, error) {
 }
 
 func ReadAbiFile(abiFilePath string) (string, error) {
-	reader := file_system.FsReader{}
+	reader := fs.FsReader{}
 	filesBytes, err := reader.Read(abiFilePath)
 	if err != nil {
 		return "", ErrMissingAbiFile

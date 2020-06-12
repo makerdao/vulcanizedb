@@ -23,7 +23,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
-	"github.com/makerdao/vulcanizedb/pkg/file_system"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/makerdao/vulcanizedb/pkg/history"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
@@ -62,7 +62,7 @@ func init() {
 }
 
 func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	statusWriter := file_system.NewStatusWriter("/tmp/header_sync_health_check", []byte("headerSync starting\n"))
+	statusWriter := fs.NewStatusWriter("/tmp/header_sync_health_check", []byte("headerSync starting\n"))
 	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber, statusWriter)
 	if err != nil {
 		// TODO Lots of possible errors in the call stack above. If errors occur, we still put

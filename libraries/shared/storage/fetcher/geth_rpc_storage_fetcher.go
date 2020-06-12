@@ -21,7 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
-	"github.com/makerdao/vulcanizedb/pkg/file_system"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -36,10 +36,10 @@ type GethRpcStorageFetcher struct {
 	statediffPayloadChan chan statediff.Payload
 	streamer             streamer.Streamer
 	gethVersion          GethPatchVersion
-	statusWriter         file_system.IStatusWriter
+	statusWriter         fs.StatusWriter
 }
 
-func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload, gethVersion GethPatchVersion, statusWriter file_system.IStatusWriter) GethRpcStorageFetcher {
+func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload, gethVersion GethPatchVersion, statusWriter fs.StatusWriter) GethRpcStorageFetcher {
 	return GethRpcStorageFetcher{
 		statediffPayloadChan: statediffPayloadChan,
 		streamer:             streamer,

@@ -20,15 +20,15 @@ import (
 	"strings"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
-	"github.com/makerdao/vulcanizedb/pkg/file_system"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 )
 
 type CsvTailStorageFetcher struct {
-	tailer       file_system.Tailer
-	statusWriter file_system.IStatusWriter
+	tailer       fs.Tailer
+	statusWriter fs.StatusWriter
 }
 
-func NewCsvTailStorageFetcher(tailer file_system.Tailer, statusWriter file_system.IStatusWriter) CsvTailStorageFetcher {
+func NewCsvTailStorageFetcher(tailer fs.Tailer, statusWriter fs.StatusWriter) CsvTailStorageFetcher {
 	return CsvTailStorageFetcher{
 		tailer:       tailer,
 		statusWriter: statusWriter,

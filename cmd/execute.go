@@ -26,7 +26,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
-	"github.com/makerdao/vulcanizedb/pkg/file_system"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -98,7 +98,7 @@ func executeTransformers() {
 		extractor := logs.NewLogExtractor(&db, blockChain)
 		delegator := logs.NewLogDelegator(&db)
 		eventHealthCheckMessage := []byte("event watcher starting\n")
-		statusWriter := file_system.NewStatusAppender(healthCheckFile, eventHealthCheckMessage)
+		statusWriter := fs.NewStatusWriter(healthCheckFile, eventHealthCheckMessage)
 		ew := watcher.NewEventWatcher(&db, blockChain, extractor, delegator, maxUnexpectedErrors, retryInterval, statusWriter)
 		addErr := ew.AddTransformers(ethEventInitializers)
 		if addErr != nil {
@@ -108,9 +108,9 @@ func executeTransformers() {
 		go watchEthEvents(&ew, &wg)
 	}
 
-	storageHealthCheckMessage := []byte("storage watcher starting\n")
-	statusWriter := file_system.NewStatusAppender(healthCheckFile, storageHealthCheckMessage)
 	if len(ethStorageInitializers) > 0 {
+		storageHealthCheckMessage := []byte("storage watcher starting\n")
+		statusWriter := fs.NewStatusWriter(healthCheckFile, storageHealthCheckMessage)
 		sw := watcher.NewStorageWatcher(&db, diffBlockFromHeadOfChain, statusWriter)
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)

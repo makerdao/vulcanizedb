@@ -86,16 +86,13 @@ var _ = Describe("Event Watcher", func() {
 	})
 
 	Describe("Execute", func() {
-		It("creates file for health check", func(done Done) {
+		It("creates file for health check", func() {
 			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(errExecuteClosed))
-			Eventually(func() bool {
-				return statusWriter.WriteCalled
-			}).Should(BeTrue())
-			close(done)
+			Expect(statusWriter.WriteCalled).To(BeTrue())
 		})
 
 		It("extracts watched logs", func() {

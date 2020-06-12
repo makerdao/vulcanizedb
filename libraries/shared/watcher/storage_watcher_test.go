@@ -66,16 +66,13 @@ var _ = Describe("Storage Watcher", func() {
 			}
 		})
 
-		It("creates file for health check", func(done Done) {
+		It("creates file for health check", func() {
 			mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
 
 			err := storageWatcher.Execute()
 
 			Expect(err).To(HaveOccurred())
-			Eventually(func() bool {
-				return statusWriter.WriteCalled
-			}).Should(BeTrue())
-			close(done)
+			Expect(statusWriter.WriteCalled).To(BeTrue())
 		})
 
 		It("fetches diffs with results limit", func() {

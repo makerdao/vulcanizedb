@@ -1,4 +1,4 @@
-package file_system_test
+package fs_test
 
 import (
 	"testing"
