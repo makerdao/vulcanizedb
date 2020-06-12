@@ -1,4 +1,4 @@
-package fs
+package file_system
 
 import "github.com/hpcloud/tail"
 

@@ -5,7 +5,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
-	"github.com/makerdao/vulcanizedb/pkg/fs"
+	"github.com/makerdao/vulcanizedb/pkg/file_system"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -53,7 +53,7 @@ func extractDiffs() {
 		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatch)
 	default:
 		logrus.Debug("fetching storage diffs from csv")
-		tailer := fs.FileTailer{Path: storageDiffsPath}
+		tailer := file_system.FileTailer{Path: storageDiffsPath}
 		storageFetcher = fetcher.NewCsvTailStorageFetcher(tailer)
 	}
 
