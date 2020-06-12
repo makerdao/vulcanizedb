@@ -11,8 +11,8 @@ import (
 
 var _ = Describe("StatusWriter", func() {
 	var (
-		testFileName = "test-file"
-		testFilePath = "/tmp/" + testFileName
+		testFileName     = "test-file"
+		testFilePath     = "/tmp/" + testFileName
 		testFileContents = []byte("test contents\n")
 	)
 	AfterEach(func() {

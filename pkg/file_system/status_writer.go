@@ -27,18 +27,18 @@ func (w StatusWriter) Write() error {
 }
 
 type StatusAppender struct {
-	file    string
-	message []byte
-	perm    os.FileMode
+	file      string
+	message   []byte
+	perm      os.FileMode
 	fileFlags int
 }
 
 func NewStatusAppender(file string, message []byte) StatusAppender {
 	return StatusAppender{
-		file:    file,
-		message: message,
-		perm:    0644,
-		fileFlags: os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		file:      file,
+		message:   message,
+		perm:      0644,
+		fileFlags: os.O_APPEND | os.O_CREATE | os.O_WRONLY,
 	}
 }
 func (a StatusAppender) Write() error {
@@ -48,12 +48,12 @@ func (a StatusAppender) Write() error {
 	}
 
 	_, writeErr := file.Write(a.message)
-		if writeErr != nil{
-			closeErr := file.Close()
-			if closeErr != nil {
-				return closeErr
-			}
-			return writeErr
+	if writeErr != nil {
+		closeErr := file.Close()
+		if closeErr != nil {
+			return closeErr
 		}
+		return writeErr
+	}
 	return file.Close()
 }
