@@ -62,8 +62,7 @@ func init() {
 }
 
 func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	statusWriter := fs.NewStatusWriter("/tmp/header_sync_health_check", []byte("headerSync starting\n"))
-	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber, statusWriter)
+	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
 	if err != nil {
 		// TODO Lots of possible errors in the call stack above. If errors occur, we still put
 		// 0 in the channel, triggering another round
@@ -82,6 +81,13 @@ func headerSync() {
 	headerRepository := repositories.NewHeaderRepository(&db)
 	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
+
+	statusWriter := fs.NewStatusWriter("/tmp/header_sync_health_check", []byte("headerSync starting\n"))
+	writeErr := statusWriter.Write()
+	if writeErr != nil {
+		LogWithCommand.Errorf("headerSync: Error writing health check file: %s", writeErr.Error())
+	}
+
 	go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 
 	for {
@@ -104,8 +110,7 @@ func headerSync() {
 func validateHeaderSyncArgs(blockChain *eth.BlockChain) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		LogWithCommand.Errorf("validateHeaderSyncArgs: Error getting last block: %s", err.Error())
-		return
+		LogWithCommand.Fatalf("validateHeaderSyncArgs: Error getting last block: %s", err.Error())
 	}
 	lastBlockNumber := lastBlock.Int64()
 	if startingBlockNumber > lastBlockNumber {

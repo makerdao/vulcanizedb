@@ -11,9 +11,9 @@ import (
 
 var _ = Describe("statusWriter", func() {
 	var (
-		testFileName          = "test-file"
-		testFilePath          = "/tmp/" + testFileName
-		testFileContents  = []byte("test contents\n")
+		testFileName     = "test-file"
+		testFilePath     = "/tmp/" + testFileName
+		testFileContents = []byte("test contents\n")
 		writer           fs.StatusWriter
 	)
 	BeforeEach(func() {

@@ -40,7 +40,7 @@ var _ = Describe("Populating headers", func() {
 		blockChain.SetLastBlock(big.NewInt(2))
 		headerRepository.SetMissingBlockNumbers([]int64{2})
 
-		headersAdded, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1, &statusWriter)
+		headersAdded, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(headersAdded).To(Equal(1))
@@ -51,7 +51,7 @@ var _ = Describe("Populating headers", func() {
 		blockChain.SetLastBlock(big.NewInt(2))
 		headerRepository.SetMissingBlockNumbers([]int64{2})
 
-		_, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1, &statusWriter)
+		_, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
 
 		Expect(err).NotTo(HaveOccurred())
 		headerRepository.AssertCreateOrUpdateHeaderCallCountAndPassedBlockNumbers(1, []int64{2})
@@ -60,28 +60,17 @@ var _ = Describe("Populating headers", func() {
 	It("returns early if the db is already synced up to the head of the chain", func() {
 		blockChain := fakes.NewMockBlockChain()
 		blockChain.SetLastBlock(big.NewInt(2))
-		headersAdded, err := history.PopulateMissingHeaders(blockChain, headerRepository, 2, &statusWriter)
+		headersAdded, err := history.PopulateMissingHeaders(blockChain, headerRepository, 2)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(headersAdded).To(Equal(0))
-	})
-
-	It("Writes a healthcheck file", func() {
-		blockChain := fakes.NewMockBlockChain()
-		blockChain.SetLastBlock(big.NewInt(2))
-		headerRepository.SetMissingBlockNumbers([]int64{2})
-
-		_, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1, &statusWriter)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(statusWriter.WriteCalled).To(BeTrue())
 	})
 
 	It("Does not write a healthcheck file when the call to get the last block fails", func() {
 		blockChain := fakes.NewMockBlockChain()
 		blockChain.SetLastBlockError(fakes.FakeError)
 
-		_, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1, &statusWriter)
+		_, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
