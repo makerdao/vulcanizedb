@@ -66,7 +66,7 @@ var _ = Describe("Storage row parsing", func() {
 		})
 	})
 
-	Describe("FromOldGethStateDiff", func() {
+	Describe("FromGethStateDiff", func() {
 		var (
 			accountDiff = filters.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
 			stateDiff   = &filters.StateDiff{
@@ -85,62 +85,7 @@ var _ = Describe("Storage row parsing", func() {
 				Value: storageValueRlp,
 			}
 
-			result, err := types.FromOldGethStateDiff(accountDiff, stateDiff, storageDiff)
-			Expect(err).NotTo(HaveOccurred())
-
-			expectedAddress := common.BytesToHash(accountDiff.Key)
-			Expect(result.HashedAddress).To(Equal(expectedAddress))
-			Expect(result.BlockHash).To(Equal(fakes.FakeHash))
-			expectedBlockHeight := int(stateDiff.BlockNumber.Int64())
-			Expect(result.BlockHeight).To(Equal(expectedBlockHeight))
-			expectedStorageKey := common.BytesToHash(storageDiff.Key)
-			Expect(result.StorageKey).To(Equal(expectedStorageKey))
-			expectedStorageValue := common.BytesToHash(storageValueBytes)
-			Expect(result.StorageValue).To(Equal(expectedStorageValue))
-		})
-
-		It("handles decoding large storage values from their RLP", func() {
-			storageValueBytes := []byte{1, 2, 3, 4, 5, 0, 9, 8, 7, 6}
-			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
-			Expect(encodeErr).NotTo(HaveOccurred())
-
-			storageDiff := filters.StorageDiff{
-				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-				Value: storageValueRlp,
-			}
-
-			result, err := types.FromOldGethStateDiff(accountDiff, stateDiff, storageDiff)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result.StorageValue).To(Equal(common.BytesToHash(storageValueBytes)))
-		})
-
-		It("returns an err if decoding the storage value Rlp fails", func() {
-			_, err := types.FromOldGethStateDiff(accountDiff, stateDiff, test_data.StorageWithBadValue)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError("rlp: input contains more than one value"))
-		})
-	})
-
-	Describe("FromNewGethStateDiff", func() {
-		var (
-			accountDiff = filters.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
-			stateDiff   = &filters.StateDiff{
-				BlockNumber: big.NewInt(rand.Int63()),
-				BlockHash:   fakes.FakeHash,
-			}
-		)
-
-		It("adds relevant fields to diff", func() {
-			storageValueBytes := []byte{3}
-			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
-			Expect(encodeErr).NotTo(HaveOccurred())
-
-			storageDiff := filters.StorageDiff{
-				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-				Value: storageValueRlp,
-			}
-
-			result, err := types.FromNewGethStateDiff(accountDiff, stateDiff, storageDiff)
+			result, err := types.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedHashedAddress := crypto.Keccak256Hash(accountDiff.Key)
@@ -164,13 +109,13 @@ var _ = Describe("Storage row parsing", func() {
 				Value: storageValueRlp,
 			}
 
-			result, err := types.FromNewGethStateDiff(accountDiff, stateDiff, storageDiff)
+			result, err := types.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.StorageValue).To(Equal(common.BytesToHash(storageValueBytes)))
 		})
 
 		It("returns an err if decoding the storage value Rlp fails", func() {
-			_, err := types.FromNewGethStateDiff(accountDiff, stateDiff, test_data.StorageWithBadValue)
+			_, err := types.FromGethStateDiff(accountDiff, stateDiff, test_data.StorageWithBadValue)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("rlp: input contains more than one value"))
 		})

@@ -51,24 +51,12 @@ func extractDiffs() {
 	logrus.Debug("fetching storage diffs from geth")
 	switch storageDiffsSource {
 	case "geth":
-		logrus.Info("Using original geth patch")
-		rpcClient, _ := getClients()
-		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-		payloadChan := make(chan filters.Payload)
-		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.OldGethPatch, gethStatusWriter)
-	case "new-geth":
-		logrus.Info("Using new geth patch with statediff service")
-		rpcClient, _ := getClients()
-		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-		payloadChan := make(chan filters.Payload)
-		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatchWithService, gethStatusWriter)
-	case "new-geth-with-filter":
 		logrus.Info("Using new geth patch with filters event system")
 		_, ethClient := getClients()
 		filterQuery := createFilterQuery()
 		stateDiffStreamer := streamer.NewEthStateChangeStreamer(ethClient, filterQuery)
 		payloadChan := make(chan filters.Payload)
-		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatchWithFilter)
+		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, gethStatusWriter)
 	default:
 		logrus.Debug("fetching storage diffs from csv")
 		tailer := fs.FileTailer{Path: storageDiffsPath}

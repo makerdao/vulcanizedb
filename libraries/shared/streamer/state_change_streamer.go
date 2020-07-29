@@ -27,21 +27,6 @@ type Streamer interface {
 	Stream(chan filters.Payload) (core.Subscription, error)
 }
 
-type StateDiffStreamer struct {
-	client core.RpcClient
-}
-
-func (streamer *StateDiffStreamer) Stream(payloadChan chan filters.Payload) (core.Subscription, error) {
-	logrus.Info("streaming diffs from geth")
-	return streamer.client.Subscribe("statediff", payloadChan, "stream")
-}
-
-func NewStateDiffStreamer(client core.RpcClient) StateDiffStreamer {
-	return StateDiffStreamer{
-		client: client,
-	}
-}
-
 type EthStateChangeStreamer struct {
 	ethClient   core.EthClient
 	filterQuery ethereum.FilterQuery

@@ -24,18 +24,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("StateDiff Streamer", func() {
-	It("subscribes to the geth statediff service", func() {
-		client := &fakes.MockRpcClient{}
-		streamer := streamer.NewStateDiffStreamer(client)
-		payloadChan := make(chan filters.Payload)
-		_, err := streamer.Stream(payloadChan)
-		Expect(err).NotTo(HaveOccurred())
-
-		client.AssertSubscribeCalledWith("statediff", payloadChan, []interface{}{"stream"})
-	})
-
-	It("subscribes to the geth statediff service", func() {
+var _ = Describe("State Change Streamer", func() {
+	It("subscribes to the geth state change subscription", func() {
 		ethClient := &fakes.MockEthClient{}
 		filterQuery := ethereum.FilterQuery{
 			Addresses: []common.Address{fakes.FakeAddress},

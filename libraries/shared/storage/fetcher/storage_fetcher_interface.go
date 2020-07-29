@@ -18,18 +18,6 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 )
 
-type GethPatchVersion int
-
-const (
-	OldGethPatch GethPatchVersion = iota
-	NewGethPatchWithService
-	NewGethPatchWithFilter
-)
-
-func (g GethPatchVersion) String() string {
-	return [...]string{"OldGethPatch", "NewGethPatchWithService", "NewGethPatchWithFilter"}[g]
-}
-
 type IStorageFetcher interface {
 	FetchStorageDiffs(out chan<- types.RawDiff, errs chan<- error)
 }

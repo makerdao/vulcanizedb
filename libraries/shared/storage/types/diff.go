@@ -60,23 +60,7 @@ func FromParityCsvRow(csvRow []string) (RawDiff, error) {
 	}, nil
 }
 
-func FromOldGethStateDiff(account filters.AccountDiff, stateDiff *filters.StateDiff, storage filters.StorageDiff) (RawDiff, error) {
-	var decodedRLPStorageValue []byte
-	err := rlp.DecodeBytes(storage.Value, &decodedRLPStorageValue)
-	if err != nil {
-		return RawDiff{}, err
-	}
-
-	return RawDiff{
-		HashedAddress: common.BytesToHash(account.Key),
-		BlockHash:     stateDiff.BlockHash,
-		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
-		StorageKey:    common.BytesToHash(storage.Key),
-		StorageValue:  common.BytesToHash(decodedRLPStorageValue),
-	}, nil
-}
-
-func FromNewGethStateDiff(account filters.AccountDiff, stateDiff *filters.StateDiff, storage filters.StorageDiff) (RawDiff, error) {
+func FromGethStateDiff(account filters.AccountDiff, stateDiff *filters.StateDiff, storage filters.StorageDiff) (RawDiff, error) {
 	var decodedRLPStorageValue []byte
 	err := rlp.DecodeBytes(storage.Value, &decodedRLPStorageValue)
 	if err != nil {
@@ -90,13 +74,6 @@ func FromNewGethStateDiff(account filters.AccountDiff, stateDiff *filters.StateD
 		StorageKey:    common.BytesToHash(storage.Key),
 		StorageValue:  common.BytesToHash(decodedRLPStorageValue),
 	}, nil
-}
-
-func ToPersistedDiff(raw RawDiff, id int64) PersistedDiff {
-	return PersistedDiff{
-		RawDiff: raw,
-		ID:      id,
-	}
 }
 
 func HexToKeccak256Hash(hex string) common.Hash {
