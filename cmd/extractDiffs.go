@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	watchedStorageAddresses         []string
-	watchedStorageAddressesFlagName = "watchedStorageAddresses"
+	watchedAddresses         []string
+	watchedAddressesFlagName = "watchedAddresses"
 )
 
 // extractDiffsCmd represents the extractDiffs command
@@ -33,7 +33,7 @@ var extractDiffsCmd = &cobra.Command{
 }
 
 func init() {
-	extractDiffsCmd.Flags().StringSliceVarP(&watchedStorageAddresses, watchedStorageAddressesFlagName, "w", []string{}, "contract addresses to subscribe to for storage diffs")
+	extractDiffsCmd.Flags().StringSliceVarP(&watchedAddresses, watchedAddressesFlagName, "w", []string{}, "contract addresses to subscribe to for storage diffs")
 	rootCmd.AddCommand(extractDiffsCmd)
 }
 
@@ -75,8 +75,9 @@ func extractDiffs() {
 }
 
 func createFilterQuery() ethereum.FilterQuery {
+	logrus.Infof("Creating a filter query for %d watched addresses", len(watchedAddresses))
 	var addresses []common.Address
-	for _, addressString := range watchedStorageAddresses {
+	for _, addressString := range watchedAddresses {
 		addresses = append(addresses, common.HexToAddress(addressString))
 	}
 
