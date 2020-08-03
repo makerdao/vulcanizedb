@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/eth/filters"
@@ -76,6 +78,9 @@ func extractDiffs() {
 
 func createFilterQuery() ethereum.FilterQuery {
 	logrus.Infof("Creating a filter query for %d watched addresses", len(watchedAddresses))
+	addressesToLog := strings.Join(watchedAddresses[:], ", ")
+	logrus.Infof("Watched addresses: %s", addressesToLog)
+
 	var addresses []common.Address
 	for _, addressString := range watchedAddresses {
 		addresses = append(addresses, common.HexToAddress(addressString))
