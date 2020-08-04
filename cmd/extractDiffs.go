@@ -13,11 +13,7 @@ import (
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-)
-
-var (
-	watchedAddresses         []string
-	watchedAddressesFlagName = "watchedAddresses"
+	"github.com/spf13/viper"
 )
 
 // extractDiffsCmd represents the extractDiffs command
@@ -35,14 +31,25 @@ var extractDiffsCmd = &cobra.Command{
 }
 
 func init() {
-	extractDiffsCmd.Flags().StringSliceVarP(&watchedAddresses, watchedAddressesFlagName, "w", []string{}, "contract addresses to subscribe to for storage diffs")
 	rootCmd.AddCommand(extractDiffsCmd)
+}
+
+func getContractAddresses() []string {
+	LogWithCommand.Info("Getting contract addresses from config file")
+	contracts := viper.GetStringMap("contract")
+	var addresses []string
+	for contractName := range contracts {
+		address := viper.GetStringMapString("contract." + contractName)["address"]
+		addresses = append(addresses, address)
+	}
+	return addresses
 }
 
 func extractDiffs() {
 	// Setup bc and db objects
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+	addressesToWatch := getContractAddresses()
 
 	healthCheckFile := "/tmp/connection"
 	msg := []byte("geth storage fetcher connection established\n")
@@ -55,7 +62,7 @@ func extractDiffs() {
 	case "geth":
 		logrus.Info("Using new geth patch with filters event system")
 		_, ethClient := getClients()
-		filterQuery := createFilterQuery()
+		filterQuery := createFilterQuery(addressesToWatch)
 		stateDiffStreamer := streamer.NewEthStateChangeStreamer(ethClient, filterQuery)
 		payloadChan := make(chan filters.Payload)
 		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, gethStatusWriter)
@@ -76,7 +83,7 @@ func extractDiffs() {
 	}
 }
 
-func createFilterQuery() ethereum.FilterQuery {
+func createFilterQuery(watchedAddresses []string) ethereum.FilterQuery {
 	logrus.Infof("Creating a filter query for %d watched addresses", len(watchedAddresses))
 	addressesToLog := strings.Join(watchedAddresses[:], ", ")
 	logrus.Infof("Watched addresses: %s", addressesToLog)
