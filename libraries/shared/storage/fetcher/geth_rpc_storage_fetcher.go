@@ -85,6 +85,7 @@ func (fetcher GethRpcStorageFetcher) handleDiffPayload(payload filters.Payload, 
 			rawDiff, formatErr := types.FromGethStateDiff(account, &stateDiff, accountStorage)
 			if formatErr != nil {
 				errs <- formatErr
+				return
 			}
 
 			logrus.Tracef(addingDiffsLogString, rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())

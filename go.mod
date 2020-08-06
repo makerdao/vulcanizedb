@@ -34,7 +34,6 @@ require (
 	github.com/onsi/gomega v1.10.0
 	github.com/oschwald/maxminddb-golang v1.5.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
-	github.com/pkg/errors v0.8.1
 	github.com/pressly/goose v2.6.0+incompatible
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
