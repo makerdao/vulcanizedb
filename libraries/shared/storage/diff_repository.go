@@ -27,6 +27,7 @@ type DiffRepository interface {
 	CreateStorageDiff(rawDiff types.RawDiff) (int64, error)
 	CreateBackFilledStorageValue(rawDiff types.RawDiff) error
 	GetNewDiffs(minID, limit int) ([]types.PersistedDiff, error)
+	GetUnrecognizedDiffs(minID, limit int) ([]types.PersistedDiff, error)
 	MarkTransformed(id int64) error
 	MarkNoncanonical(id int64) error
 	MarkUnrecognized(id int64) error
@@ -78,12 +79,28 @@ func (repository diffRepository) GetNewDiffs(minID, limit int) ([]types.Persiste
 	var result []types.PersistedDiff
 	err := repository.db.Select(
 		&result,
-		`SELECT id, address, block_height, block_hash, storage_key, storage_value, eth_node_id, status, from_backfill 
-				FROM public.storage_diff WHERE (status = $1 OR status = $2) AND id > $3 ORDER BY id ASC LIMIT $4`,
-		New, Unrecognized, minID, limit,
+		`SELECT id, address, block_height, block_hash, storage_key, storage_value, eth_node_id, status, from_backfill
+				FROM public.storage_diff
+				WHERE status = $1 AND id > $2 ORDER BY id ASC LIMIT $3`,
+		New, minID, limit,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error getting unchecked storage diffs with id greater than %d: %w", minID, err)
+		return nil, fmt.Errorf("error getting new storage diffs with id greater than %d: %w", minID, err)
+	}
+	return result, nil
+}
+
+func (repository diffRepository) GetUnrecognizedDiffs(minID, limit int) ([]types.PersistedDiff, error) {
+	var result []types.PersistedDiff
+	err := repository.db.Select(
+		&result,
+		`SELECT id, address, block_height, block_hash, storage_key, storage_value, eth_node_id, status, from_backfill
+				FROM public.storage_diff
+				WHERE status = $1 AND id > $2 ORDER BY id ASC LIMIT $3`,
+		Unrecognized, minID, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error getting unrecognized storage diffs with id greater than %d: %w", minID, err)
 	}
 	return result, nil
 }

@@ -88,28 +88,6 @@ func (watcher StorageWatcher) Execute() error {
 	}
 }
 
-func (watcher StorageWatcher) getMinDiffID() (int, error) {
-	var minID = 0
-	if watcher.DiffBlocksFromHeadOfChain != -1 {
-		mostRecentHeaderBlockNumber, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeaderBlockNumber()
-		if getHeaderErr != nil {
-			return 0, fmt.Errorf("error getting most recent header block number: %w", getHeaderErr)
-		}
-		blockNumber := mostRecentHeaderBlockNumber - watcher.DiffBlocksFromHeadOfChain
-		diffID, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffIDForBlockHeight(blockNumber)
-		if getDiffErr != nil {
-			return 0, fmt.Errorf("error getting first diff id for block height %d: %w", blockNumber, getDiffErr)
-		}
-
-		// We are subtracting an offset from the diffID because it will be passed to GetNewDiffs which returns diffs with ids
-		// greater than id passed in (minID), and we want to make sure that this diffID here is included in that collection
-		diffOffset := int64(1)
-		minID = int(diffID - diffOffset)
-	}
-
-	return minID, nil
-}
-
 func (watcher StorageWatcher) transformDiffs() error {
 	minID, minIDErr := watcher.getMinDiffID()
 	if minIDErr != nil && !errors.Is(minIDErr, sql.ErrNoRows) {
@@ -137,6 +115,27 @@ func (watcher StorageWatcher) transformDiffs() error {
 	}
 }
 
+func (watcher StorageWatcher) getMinDiffID() (int, error) {
+	var minID = 0
+	if watcher.DiffBlocksFromHeadOfChain != -1 {
+		mostRecentHeaderBlockNumber, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeaderBlockNumber()
+		if getHeaderErr != nil {
+			return 0, fmt.Errorf("error getting most recent header block number: %w", getHeaderErr)
+		}
+		blockNumber := mostRecentHeaderBlockNumber - watcher.DiffBlocksFromHeadOfChain
+		diffID, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffIDForBlockHeight(blockNumber)
+		if getDiffErr != nil {
+			return 0, fmt.Errorf("error getting first diff id for block height %d: %w", blockNumber, getDiffErr)
+		}
+
+		// We are subtracting an offset from the diffID because it will be passed to GetNewDiffs which returns diffs with ids
+		// greater than id passed in (minID), and we want to make sure that this diffID here is included in that collection
+		diffOffset := int64(1)
+		minID = int(diffID - diffOffset)
+	}
+
+	return minID, nil
+}
 func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 	t, watching := watcher.getTransformer(diff)
 	if !watching {

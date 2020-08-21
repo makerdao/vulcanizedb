@@ -230,7 +230,7 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(diffs).To(ConsistOf(fakePersistedDiff))
 		})
 
-		It("sends diffs that are marked as 'unrecognized'", func() {
+		It("does not sends diffs that are marked as 'unrecognized'", func() {
 			unrecognizedPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
@@ -242,10 +242,10 @@ var _ = Describe("Storage diffs repository", func() {
 			diffs, err := repo.GetNewDiffs(0, 1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(diffs).To(ConsistOf(unrecognizedPersistedDiff))
+			Expect(diffs).To(BeEmpty())
 		})
 
-		It("does not send diffs that are marked as transformed", func() {
+		It("does not send diffs that are marked as 'transformed'", func() {
 			transformedPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
@@ -260,7 +260,7 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(diffs).To(BeEmpty())
 		})
 
-		It("does not send diffs that are marked as noncanonical", func() {
+		It("does not send diffs that are marked as 'noncanonical'", func() {
 			noncanonicalPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
@@ -289,6 +289,99 @@ var _ = Describe("Storage diffs repository", func() {
 					RawDiff:   fakeRawDiff,
 					ID:        rand.Int63(),
 					Status:    storage.New,
+					EthNodeID: db.NodeID,
+				}
+				insertTestDiff(persistedDiff, db)
+			}
+
+			minID := 0
+			limit := 1
+			diffsOne, errOne := repo.GetNewDiffs(minID, limit)
+			Expect(errOne).NotTo(HaveOccurred())
+			Expect(len(diffsOne)).To(Equal(1))
+			nextID := int(diffsOne[0].ID)
+			diffsTwo, errTwo := repo.GetNewDiffs(nextID, limit)
+			Expect(errTwo).NotTo(HaveOccurred())
+			Expect(len(diffsTwo)).To(Equal(1))
+			Expect(int(diffsTwo[0].ID) > nextID).To(BeTrue())
+		})
+	})
+
+	Describe("GetUnrecognizedDiffs", func() {
+		It("sends diffs that are marked as 'unrecognized'", func() {
+			fakePersistedDiff := types.PersistedDiff{
+				RawDiff:   fakeStorageDiff,
+				ID:        rand.Int63(),
+				EthNodeID: db.NodeID,
+				Status:    "unrecognized",
+			}
+			insertTestDiff(fakePersistedDiff, db)
+
+			diffs, err := repo.GetUnrecognizedDiffs(0, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(ConsistOf(fakePersistedDiff))
+		})
+
+		It("does not sends diffs that are marked as 'new'", func() {
+			unrecognizedPersistedDiff := types.PersistedDiff{
+				RawDiff:   fakeStorageDiff,
+				ID:        rand.Int63(),
+				Status:    "new",
+				EthNodeID: db.NodeID,
+			}
+			insertTestDiff(unrecognizedPersistedDiff, db)
+
+			diffs, err := repo.GetUnrecognizedDiffs(0, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(BeEmpty())
+		})
+
+		It("does not send diffs that are marked as 'transformed'", func() {
+			transformedPersistedDiff := types.PersistedDiff{
+				RawDiff:   fakeStorageDiff,
+				ID:        rand.Int63(),
+				Status:    "transformed",
+				EthNodeID: db.NodeID,
+			}
+			insertTestDiff(transformedPersistedDiff, db)
+
+			diffs, err := repo.GetUnrecognizedDiffs(0, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(BeEmpty())
+		})
+
+		It("does not send diffs that are marked as 'noncanonical'", func() {
+			noncanonicalPersistedDiff := types.PersistedDiff{
+				RawDiff:   fakeStorageDiff,
+				ID:        rand.Int63(),
+				Status:    "noncanonical",
+				EthNodeID: db.NodeID,
+			}
+			insertTestDiff(noncanonicalPersistedDiff, db)
+
+			diffs, err := repo.GetUnrecognizedDiffs(0, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(BeEmpty())
+		})
+
+		It("enables seeking diffs with greater ID", func() {
+			blockZero := rand.Int()
+			for i := 0; i < 2; i++ {
+				fakeRawDiff := types.RawDiff{
+					Address: test_data.FakeAddress(),
+					BlockHash:     test_data.FakeHash(),
+					BlockHeight:   blockZero + i,
+					StorageKey:    test_data.FakeHash(),
+					StorageValue:  test_data.FakeHash(),
+				}
+				persistedDiff := types.PersistedDiff{
+					RawDiff:   fakeRawDiff,
+					ID:        rand.Int63(),
+					Status:    "new",
 					EthNodeID: db.NodeID,
 				}
 				insertTestDiff(persistedDiff, db)
