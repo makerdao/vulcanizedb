@@ -28,7 +28,7 @@ type MockStorageDiffRepository struct {
 	GetNewDiffsErrors                          []error
 	GetNewDiffsPassedMinIDs                    []int
 	GetNewDiffsPassedLimits                    []int
-	MarkCheckedPassedID                        int64
+	MarkTransformedPassedID                    int64
 	MarkUnrecognizedPassedID                   int64
 	MarkNoncanonicalPassedID                   int64
 	MarkUnwatchedPassedID                      int64
@@ -62,7 +62,7 @@ func (repository *MockStorageDiffRepository) GetUnrecognizedDiffs(minID, limit i
 }
 
 func (repository *MockStorageDiffRepository) MarkTransformed(id int64) error {
-	repository.MarkCheckedPassedID = id
+	repository.MarkTransformedPassedID = id
 	return nil
 }
 
