@@ -39,7 +39,7 @@ var _ = Describe("Storage Watcher", func() {
 		It("adds transformers", func() {
 			fakeAddress := fakes.FakeAddress
 			fakeTransformer := &mocks.MockStorageTransformer{Address: fakeAddress}
-			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
+			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, watcher.New)
 
 			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -57,7 +57,7 @@ var _ = Describe("Storage Watcher", func() {
 		BeforeEach(func() {
 			mockDiffsRepository = &mocks.MockStorageDiffRepository{}
 			mockHeaderRepository = &fakes.MockHeaderRepository{}
-			storageWatcher = watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
+			storageWatcher = watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, watcher.New)
 			storageWatcher.HeaderRepository = mockHeaderRepository
 			storageWatcher.StorageDiffRepository = mockDiffsRepository
 		})

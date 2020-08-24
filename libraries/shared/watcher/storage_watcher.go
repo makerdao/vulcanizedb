@@ -50,9 +50,17 @@ type StorageWatcher struct {
 	StorageDiffRepository     storage.DiffRepository
 	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
 	StatusWriter              fs.StatusWriter
+	diffStatus                DiffStatusToWatch
 }
 
-func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter) StorageWatcher {
+type DiffStatusToWatch int
+
+const (
+	New DiffStatusToWatch = iota
+	Unrecognized
+)
+
+func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, diffStatusToWatch DiffStatusToWatch) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Address]storage2.ITransformer)
@@ -63,6 +71,7 @@ func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter 
 		StorageDiffRepository:     storageDiffRepository,
 		DiffBlocksFromHeadOfChain: backFromHeadOfChain,
 		StatusWriter:              statusWriter,
+		diffStatus:                diffStatusToWatch,
 	}
 }
 
@@ -80,7 +89,7 @@ func (watcher StorageWatcher) Execute() error {
 	}
 
 	for {
-		err := watcher.transformDiffs()
+		err := watcher.transformNewDiffs()
 		if err != nil {
 			logrus.Errorf("error transforming diffs: %s", err.Error())
 			return err
@@ -88,7 +97,7 @@ func (watcher StorageWatcher) Execute() error {
 	}
 }
 
-func (watcher StorageWatcher) transformDiffs() error {
+func (watcher StorageWatcher) transformNewDiffs() error {
 	minID, minIDErr := watcher.getMinDiffID()
 	if minIDErr != nil && !errors.Is(minIDErr, sql.ErrNoRows) {
 		return fmt.Errorf("error getting min diff ID: %w", minIDErr)
