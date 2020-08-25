@@ -109,9 +109,18 @@ func executeTransformers() {
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		storageHealthCheckMessage := []byte("storage watcher starting\n")
+		storageHealthCheckMessage := []byte("storage watcher for new diffs starting\n")
 		statusWriter := fs.NewStatusWriter(healthCheckFile, storageHealthCheckMessage)
 		sw := watcher.NewStorageWatcher(&db, diffBlockFromHeadOfChain, statusWriter, watcher.New)
+		sw.AddTransformers(ethStorageInitializers)
+		wg.Add(1)
+		go watchEthStorage(&sw, &wg)
+	}
+
+	if len(ethStorageInitializers) > 0 {
+		storageHealthCheckMessage := []byte("storage watcher for unrecognized diffs starting\n")
+		statusWriter := fs.NewStatusWriter(healthCheckFile, storageHealthCheckMessage)
+		sw := watcher.NewStorageWatcher(&db, diffBlockFromHeadOfChain, statusWriter, watcher.Unrecognized)
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)
