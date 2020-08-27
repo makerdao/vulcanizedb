@@ -372,11 +372,11 @@ var _ = Describe("Storage diffs repository", func() {
 			blockZero := rand.Int()
 			for i := 0; i < 2; i++ {
 				fakeRawDiff := types.RawDiff{
-					Address: test_data.FakeAddress(),
-					BlockHash:     test_data.FakeHash(),
-					BlockHeight:   blockZero + i,
-					StorageKey:    test_data.FakeHash(),
-					StorageValue:  test_data.FakeHash(),
+					Address:      test_data.FakeAddress(),
+					BlockHash:    test_data.FakeHash(),
+					BlockHeight:  blockZero + i,
+					StorageKey:   test_data.FakeHash(),
+					StorageValue: test_data.FakeHash(),
 				}
 				persistedDiff := types.PersistedDiff{
 					RawDiff:   fakeRawDiff,

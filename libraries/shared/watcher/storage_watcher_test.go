@@ -81,7 +81,7 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 		mockHeaderRepository *fakes.MockHeaderRepository
 		statusWriter         = input.statusWriter
 		storageWatcher       = input.watcher
-		contractAddress        common.Address
+		contractAddress      common.Address
 		mockTransformer      *mocks.MockStorageTransformer
 	)
 
@@ -184,9 +184,9 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 	It("does not change a diff's status if there's no header for the given block number", func() {
 		diffWithoutHeader := types.PersistedDiff{
 			RawDiff: types.RawDiff{
-				Address: contractAddress,
-				BlockHash:     test_data.FakeHash(),
-				BlockHeight:   rand.Int(),
+				Address:     contractAddress,
+				BlockHash:   test_data.FakeHash(),
+				BlockHeight: rand.Int(),
 			},
 			ID: rand.Int63(),
 		}
@@ -310,11 +310,11 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 		BeforeEach(func() {
 			blockNumber = rand.Int()
 			fakeRawDiff := types.RawDiff{
-				Address: contractAddress,
-				BlockHash:     test_data.FakeHash(),
-				BlockHeight:   blockNumber,
-				StorageKey:    test_data.FakeHash(),
-				StorageValue:  test_data.FakeHash(),
+				Address:      contractAddress,
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  blockNumber,
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
 			}
 			mockHeaderRepository.GetHeaderByBlockNumberReturnID = int64(blockNumber)
 			mockHeaderRepository.GetHeaderByBlockNumberReturnHash = test_data.FakeHash().Hex()
@@ -367,8 +367,8 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 		BeforeEach(func() {
 			fakeBlockHash := test_data.FakeHash()
 			fakeRawDiff := types.RawDiff{
-				Address: contractAddress,
-				BlockHash:     fakeBlockHash,
+				Address:   contractAddress,
+				BlockHash: fakeBlockHash,
 			}
 
 			mockHeaderRepository.GetHeaderByBlockNumberReturnID = rand.Int63()
