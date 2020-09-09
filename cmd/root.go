@@ -40,19 +40,20 @@ import (
 )
 
 var (
-	LogWithCommand              logrus.Entry
-	SubCommand                  string
-	cfgFile                     string
-	databaseConfig              config.Database
-	newDiffBlockFromHeadOfChain int64
-	genConfig                   config.Plugin
-	ipc                         string
-	maxUnexpectedErrors         int
-	recheckHeadersArg           bool
-	retryInterval               time.Duration
-	startingBlockNumber         int64
-	storageDiffsPath            string
-	storageDiffsSource          string
+	LogWithCommand                       logrus.Entry
+	SubCommand                           string
+	cfgFile                              string
+	databaseConfig                       config.Database
+	newDiffBlockFromHeadOfChain          int64
+	unrecognizedDiffBlockFromHeadOfChain int64
+	genConfig                            config.Plugin
+	ipc                                  string
+	maxUnexpectedErrors                  int
+	recheckHeadersArg                    bool
+	retryInterval                        time.Duration
+	startingBlockNumber                  int64
+	storageDiffsPath                     string
+	storageDiffsSource                   string
 )
 
 const (

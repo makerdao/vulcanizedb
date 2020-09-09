@@ -32,8 +32,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var unrecognizedDiffBlockFromHeadOfChain int64
-
 // executeCmd represents the execute command
 var executeCmd = &cobra.Command{
 	Use:   "execute",
@@ -112,21 +110,19 @@ func executeTransformers() {
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		storageHealthCheckMessage := []byte("storage watcher for new diffs starting\n")
-		statusWriter := fs.NewStatusWriter(healthCheckFile, storageHealthCheckMessage)
-		sw := watcher.NewStorageWatcher(&db, newDiffBlockFromHeadOfChain, statusWriter, watcher.New)
-		sw.AddTransformers(ethStorageInitializers)
+		newDiffStorageHealthCheckMessage := []byte("storage watcher for new diffs starting\n")
+		newDiffStatusWriter := fs.NewStatusWriter(healthCheckFile, newDiffStorageHealthCheckMessage)
+		newDiffStorageWatcher := watcher.NewStorageWatcher(&db, newDiffBlockFromHeadOfChain, newDiffStatusWriter, watcher.New)
+		newDiffStorageWatcher.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
-		go watchEthStorage(&sw, &wg)
-	}
+		go watchEthStorage(&newDiffStorageWatcher, &wg)
 
-	if len(ethStorageInitializers) > 0 {
-		storageHealthCheckMessage := []byte("storage watcher for unrecognized diffs starting\n")
-		statusWriter := fs.NewStatusWriter(healthCheckFile, storageHealthCheckMessage)
-		sw := watcher.NewStorageWatcher(&db, unrecognizedDiffBlockFromHeadOfChain, statusWriter, watcher.Unrecognized)
-		sw.AddTransformers(ethStorageInitializers)
+		unrecognizedDiffStorageHealthCheckMessage := []byte("storage watcher for unrecognized diffs starting\n")
+		unrecognizedDiffStatusWriter := fs.NewStatusWriter(healthCheckFile, unrecognizedDiffStorageHealthCheckMessage)
+		unrecognizedDiffStorageWatcher := watcher.NewStorageWatcher(&db, unrecognizedDiffBlockFromHeadOfChain, unrecognizedDiffStatusWriter, watcher.Unrecognized)
+		unrecognizedDiffStorageWatcher.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
-		go watchEthStorage(&sw, &wg)
+		go watchEthStorage(&unrecognizedDiffStorageWatcher, &wg)
 	}
 
 	if len(ethContractInitializers) > 0 {
