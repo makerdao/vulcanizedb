@@ -1,10 +1,10 @@
-package helpers_test
+package streamer_test
 
 import (
 	"bytes"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/cmd/helpers"
+	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
@@ -22,7 +22,7 @@ var _ = Describe("Helpers", func() {
 			readConfigErr := viper.ReadConfig(bytes.NewBuffer(testConfig))
 			Expect(readConfigErr).NotTo(HaveOccurred())
 
-			filterQuery, filterQueryErr := helpers.CreateFilterQuery()
+			filterQuery, filterQueryErr := streamer.CreateFilterQuery()
 			Expect(filterQueryErr).NotTo(HaveOccurred())
 			Expect(filterQuery.Addresses).To(ContainElements(contractAddresses))
 		})
@@ -32,7 +32,7 @@ var _ = Describe("Helpers", func() {
 			readConfigErr := viper.ReadConfig(bytes.NewBuffer(badTestConfig))
 			Expect(readConfigErr).NotTo(HaveOccurred())
 
-			filterQuery, filterQueryErr := helpers.CreateFilterQuery()
+			filterQuery, filterQueryErr := streamer.CreateFilterQuery()
 			Expect(filterQueryErr).To(HaveOccurred())
 			Expect(filterQueryErr).To(MatchError("test_contract_1 not parsed properly into viper"))
 			Expect(filterQuery.Addresses).NotTo(ContainElement(contractAddresses[1]))

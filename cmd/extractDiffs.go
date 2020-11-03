@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/makerdao/vulcanizedb/cmd/helpers"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
@@ -56,7 +55,7 @@ func extractDiffs() {
 	case "geth":
 		logrus.Info("Using new geth patch with filters event system")
 		_, ethClient := getClients()
-		filterQuery, filterQueryErr := helpers.CreateFilterQuery()
+		filterQuery, filterQueryErr := streamer.CreateFilterQuery()
 		if filterQueryErr != nil {
 			LogWithCommand.Fatalf("Error creating filter query from config file: %s", filterQueryErr)
 		}
