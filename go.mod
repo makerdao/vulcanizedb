@@ -17,7 +17,7 @@ require (
 	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
-	github.com/hashicorp/golang-lru v0.5.3
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/hpcloud/tail v1.0.0
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
@@ -32,8 +32,8 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/olekukonko/tablewriter v0.0.3 // indirect
-	github.com/onsi/ginkgo v1.10.1
-	github.com/onsi/gomega v1.10.0
+	github.com/onsi/ginkgo v1.14.0
+	github.com/onsi/gomega v1.10.1
 	github.com/oschwald/maxminddb-golang v1.5.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pressly/goose v2.6.0+incompatible
@@ -45,13 +45,12 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/status-im/keycard-go v0.0.0-20191119114148-6dd40a46baa0 // indirect
 	github.com/tyler-smith/go-bip39 v1.0.2 // indirect
-	golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5 // indirect
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 )
 
-replace github.com/ethereum/go-ethereum => github.com/makerdao/go-ethereum v1.9.11-rc2
+replace github.com/ethereum/go-ethereum => github.com/makerdao/go-ethereum v1.9.21-rc1
 
 replace gopkg.in/urfave/cli.v1 => gopkg.in/urfave/cli.v1 v1.20.0
