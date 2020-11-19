@@ -1,0 +1,19 @@
+[exporter]
+  home = "github.com/makerdao/vulcanizedb"
+  name = "transformerExporter"
+  save = true
+  schema = "testSchema"
+  transformerNames = ["transformer1", "transformer2"]
+  [exporter.transformer1]
+    contracts = ["CONTRACT1", "CONTRACT2"]
+    migrations = "db/migrations"
+    path = "path/to/transformer1"
+    rank = "0"
+    repository = "github.com/transformer-repository"
+    type = "eth_event"
+  [exporter.transformer2]
+    migrations = "db/migrations"
+    path = "path/to/transformer2"
+    rank = "0"
+    repository = "github.com/transformer-repository"
+    type = "eth_storage"
