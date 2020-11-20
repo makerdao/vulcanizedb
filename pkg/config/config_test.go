@@ -51,9 +51,8 @@ var _ = Describe("Plugin Config", func() {
 		Expect(testConfig.Get("client.ipcpath")).To(Equal("IPCPATH/geth.ipc"))
 	})
 
-	Describe("PrepareConfig", func() {
-		var testSubCommand = "test"
-		var testConfig = []byte(`[exporter]
+	var testSubCommand = "test"
+	var testConfig = []byte(`[exporter]
   home = "github.com/makerdao/vulcanizedb"
   name = "transformerExporter"
   save = true
@@ -72,13 +71,17 @@ var _ = Describe("Plugin Config", func() {
     rank = "0"
     repository = "github.com/transformer-repository"
     type = "eth_storage"`)
+	BeforeEach(func() {
+		viper.SetConfigType("toml")
+		readConfigErr := viper.ReadConfig(bytes.NewBuffer(testConfig))
+		Expect(readConfigErr).NotTo(HaveOccurred())
+	})
 
-		BeforeEach(func() {
-			viper.SetConfigType("toml")
-			readConfigErr := viper.ReadConfig(bytes.NewBuffer(testConfig))
-			Expect(readConfigErr).NotTo(HaveOccurred())
-		})
+	AfterEach(func() {
+		viper.Reset()
+	})
 
+	Describe("PrepareConfig", func() {
 		It("returns a Plugin config struct", func() {
 			pluginConfig, err := config.PreparePluginConfig(testSubCommand)
 			Expect(err).NotTo(HaveOccurred())
@@ -217,6 +220,51 @@ var _ = Describe("Plugin Config", func() {
 			_, err := config.PreparePluginConfig(testSubCommand)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(config.UnknownTransformerTypeErr))
+		})
+	})
+
+	Describe("GetPluginPaths", func() {
+		It("returns the go and so file paths", func() {
+			pluginConfig, prepareErr := config.PreparePluginConfig(testSubCommand)
+			Expect(prepareErr).NotTo(HaveOccurred())
+
+			goFile, soFile, getPlugingPathsErr := pluginConfig.GetPluginPaths()
+			Expect(getPlugingPathsErr).NotTo(HaveOccurred())
+			Expect(goFile).To(MatchRegexp("transformerExporter.go"))
+			Expect(soFile).To(MatchRegexp("transformerExporter.so"))
+		})
+	})
+
+	Describe("GetMigrationsPaths", func() {
+		It("returns the migrations paths", func() {
+			pluginConfig, prepareErr := config.PreparePluginConfig(testSubCommand)
+			Expect(prepareErr).NotTo(HaveOccurred())
+
+			migrationsPaths, getMigraionsErr := pluginConfig.GetMigrationsPaths()
+			Expect(getMigraionsErr).NotTo(HaveOccurred())
+			Expect(len(migrationsPaths)).To(Equal(1))
+			Expect(migrationsPaths[0]).To(MatchRegexp("db/migrations"))
+		})
+	})
+
+	Describe("GetRepoPaths", func() {
+		It("returns the repo path", func() {
+			pluginConfig, prepareErr := config.PreparePluginConfig(testSubCommand)
+			Expect(prepareErr).NotTo(HaveOccurred())
+
+			repoPaths := pluginConfig.GetRepoPaths()
+			Expect(repoPaths).To(Equal(map[string]bool{"github.com/transformer-repository": true}))
+		})
+	})
+
+	Describe("GetTransformerType", func() {
+		It("tranlates the transformer type string to an enum", func() {
+			storageTransformerType := config.GetTransformerType("eth_storage")
+			Expect(storageTransformerType).To(Equal(config.EthStorage))
+			eventTransformerType := config.GetTransformerType("eth_event")
+			Expect(eventTransformerType).To(Equal(config.EthEvent))
+			unknownTransformerType := config.GetTransformerType("unknown")
+			Expect(unknownTransformerType).To(Equal(config.UnknownTransformerType))
 		})
 	})
 })

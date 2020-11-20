@@ -46,6 +46,7 @@ type Transformer struct {
 }
 
 var (
+	PluginFilePath            = "$GOPATH/src/github.com/makerdao/vulcanizedb/plugins"
 	MissingPathErr            = errors.New("transformer config is missing `path` value")
 	MissingRepositoryErr      = errors.New("transformer config is missing `repository` value")
 	MissingMigrationsErr      = errors.New("transformer config is missing `migrations` value")
@@ -102,7 +103,7 @@ func PreparePluginConfig(subCommand string) (Plugin, error) {
 
 	return Plugin{
 		Transformers: transformers,
-		FilePath:     "$GOPATH/src/github.com/makerdao/vulcanizedb/plugins",
+		FilePath:     PluginFilePath,
 		Schema:       viper.GetString("exporter.schema"),
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
