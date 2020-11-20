@@ -41,7 +41,7 @@ This command needs a config file location specified:
 
 func compose() {
 	// Build plugin generator config
-	_, configErr := PrepConfig()
+	_, configErr := prepConfig()
 	if configErr != nil {
 		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
 	}

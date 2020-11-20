@@ -1,7 +1,7 @@
 package utilities_test
 
 import (
-	"github.com/makerdao/vulcanizedb/cmd"
+	"github.com/makerdao/vulcanizedb/cmd/utilities"
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -9,6 +9,7 @@ import (
 )
 
 var _ = Describe("Command Utilities", func() {
+	var testSubCommand = "test"
 	Describe("PrepareConfig", func() {
 		BeforeEach(func() {
 			viper.AddConfigPath("$GOPATH/src/github.com/makerdao/vulcanizedb/cmd/utilities/test_data")
@@ -18,7 +19,7 @@ var _ = Describe("Command Utilities", func() {
 		})
 
 		It("returns a Plugin config struct", func() {
-			pluginConfig, err := cmd.PrepConfig()
+			pluginConfig, err := utilities.PrepConfig(testSubCommand)
 			Expect(err).NotTo(HaveOccurred())
 			expectedConfig := config.Plugin{
 				Transformers: map[string]config.Transformer{
@@ -57,9 +58,9 @@ var _ = Describe("Command Utilities", func() {
 					"type":       "eth_event",
 				},
 			)
-			_, err := cmd.PrepConfig()
+			_, err := utilities.PrepConfig(testSubCommand)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(cmd.MissingPathErr))
+			Expect(err).To(MatchError(utilities.MissingPathErr))
 		})
 
 		It("returns an error if the transformer's repository is missing", func() {
@@ -73,9 +74,9 @@ var _ = Describe("Command Utilities", func() {
 					"type":       "eth_event",
 				},
 			)
-			_, err := cmd.PrepConfig()
+			_, err := utilities.PrepConfig(testSubCommand)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(cmd.MissingRepositoryErr))
+			Expect(err).To(MatchError(utilities.MissingRepositoryErr))
 		})
 
 		It("returns an error if the transformer's migrations is missing", func() {
@@ -89,9 +90,9 @@ var _ = Describe("Command Utilities", func() {
 					"type":       "eth_event",
 				},
 			)
-			_, err := cmd.PrepConfig()
+			_, err := utilities.PrepConfig(testSubCommand)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(cmd.MissingMigrationsErr))
+			Expect(err).To(MatchError(utilities.MissingMigrationsErr))
 		})
 
 		It("returns an error if the transformer's rank is missing", func() {
@@ -105,9 +106,9 @@ var _ = Describe("Command Utilities", func() {
 					"type":       "eth_event",
 				},
 			)
-			_, err := cmd.PrepConfig()
+			_, err := utilities.PrepConfig(testSubCommand)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(cmd.MissingRankErr))
+			Expect(err).To(MatchError(utilities.MissingRankErr))
 		})
 
 		It("returns an error a transformers rank cannot be parsed into an int", func() {
@@ -121,9 +122,9 @@ var _ = Describe("Command Utilities", func() {
 					"type":       "eth_event",
 				},
 			)
-			_, err := cmd.PrepConfig()
+			_, err := utilities.PrepConfig(testSubCommand)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(cmd.RankParsingErr))
+			Expect(err).To(MatchError(utilities.RankParsingErr))
 		})
 
 		It("returns an error if the transformer's type is missing", func() {
@@ -136,9 +137,9 @@ var _ = Describe("Command Utilities", func() {
 					"repository": "github.com/transformer-repository",
 				},
 			)
-			_, err := cmd.PrepConfig()
+			_, err := utilities.PrepConfig(testSubCommand)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(cmd.MissingTypeErr))
+			Expect(err).To(MatchError(utilities.MissingTypeErr))
 		})
 
 		It("returns an error if the transformer's type is unknown", func() {
@@ -152,9 +153,9 @@ var _ = Describe("Command Utilities", func() {
 					"type":       "not-a-type",
 				},
 			)
-			_, err := cmd.PrepConfig()
+			_, err := utilities.PrepConfig(testSubCommand)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(cmd.UnknownTransformerTypeErr))
+			Expect(err).To(MatchError(utilities.UnknownTransformerTypeErr))
 		})
 	})
 })
