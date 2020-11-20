@@ -17,8 +17,11 @@
 package config_test
 
 import (
+	"io/ioutil"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 
 	"testing"
 )
@@ -27,3 +30,7 @@ func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Config Suite")
 }
+
+var _ = BeforeSuite(func() {
+   logrus.SetOutput(ioutil.Discard)
+})

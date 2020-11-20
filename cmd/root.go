@@ -24,7 +24,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/makerdao/vulcanizedb/cmd/utilities"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
@@ -167,7 +166,7 @@ func getClients() (client.RpcClient, *ethclient.Client) {
 
 func prepConfig() (config.Plugin, error) {
 	var prepConfigErr error
-	genConfig, prepConfigErr = utilities.PrepConfig(SubCommand)
+	genConfig, prepConfigErr = config.PreparePluginConfig(SubCommand)
 	return genConfig, prepConfigErr
 }
 
