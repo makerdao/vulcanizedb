@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/plugin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -41,12 +42,12 @@ This command needs a config file location specified:
 
 func compose() {
 	// Build plugin generator config
-	_, configErr := prepConfig()
+	genConfig, configErr := prepConfig()
 	if configErr != nil {
 		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
 	}
 
-	composeTransformers()
+	composeTransformers(genConfig)
 
 	// TODO: Embed versioning info in the .so files so we know which version of vulcanizedb to run them with
 	_, pluginPath, pathErr := genConfig.GetPluginPaths()
@@ -60,7 +61,7 @@ func init() {
 	rootCmd.AddCommand(composeCmd)
 }
 
-func composeTransformers() {
+func composeTransformers(genConfig config.Plugin) {
 	// Generate code to build the plugin according to the config file
 	LogWithCommand.Info("generating plugin")
 	generator, constructorErr := plugin.NewGenerator(genConfig, databaseConfig)

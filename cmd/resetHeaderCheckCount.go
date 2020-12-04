@@ -65,6 +65,13 @@ func init() {
 func resetHeaderCount(blockNumber int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+
+	genConfig, configErr := prepConfig()
+	if configErr != nil {
+		LogWithCommand.Fatalf("SubCommand %v: failed to prepare config: %v", SubCommand, configErr)
+		return configErr
+	}
+
 	repo, repoErr := repositories.NewCheckedHeadersRepository(&db, genConfig.Schema)
 
 	if repoErr != nil {

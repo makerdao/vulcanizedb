@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
 )
+
 var _ = Describe("Plugin Config", func() {
 	var testSubCommand = "test"
 	var testConfig = []byte(`[exporter]

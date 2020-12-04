@@ -44,7 +44,6 @@ var (
 	databaseConfig                       config.Database
 	newDiffBlockFromHeadOfChain          int64
 	unrecognizedDiffBlockFromHeadOfChain int64
-	genConfig                            config.Plugin
 	ipc                                  string
 	maxUnexpectedErrors                  int
 	recheckHeadersArg                    bool
@@ -163,20 +162,11 @@ func getClients() (client.RpcClient, *ethclient.Client) {
 	return rpcClient, ethClient
 }
 
-
 func prepConfig() (config.Plugin, error) {
-	var prepConfigErr error
-	genConfig, prepConfigErr = config.PreparePluginConfig(SubCommand)
-	return genConfig, prepConfigErr
+	return config.PreparePluginConfig(SubCommand)
 }
 
-func exportTransformers() ([]event.TransformerInitializer, []storage.TransformerInitializer, []transformer.ContractTransformerInitializer, error) {
-	// Build plugin generator config
-	_, configErr := prepConfig()
-	if configErr != nil {
-		return nil, nil, nil, fmt.Errorf("SubCommand %v: failed to to prepare config: %v", SubCommand, configErr)
-	}
-
+func exportTransformers(genConfig config.Plugin) ([]event.TransformerInitializer, []storage.TransformerInitializer, []transformer.ContractTransformerInitializer, error) {
 	// Get the plugin path and load the plugin
 	_, pluginPath, pathErr := genConfig.GetPluginPaths()
 	if pathErr != nil {

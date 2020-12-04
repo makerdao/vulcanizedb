@@ -66,7 +66,13 @@ func backfillStorage() error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
-	_, storageInitializers, _, exportTransformersErr := exportTransformers()
+	genConfig, configErr := prepConfig()
+	if configErr != nil {
+		LogWithCommand.Fatalf("SubCommand %v: failed to prepare config: %v", SubCommand, configErr)
+		return configErr
+	}
+
+	_, storageInitializers, _, exportTransformersErr := exportTransformers(genConfig)
 	if exportTransformersErr != nil {
 		return fmt.Errorf("SubCommand %v: exporting transformers failed: %v", SubCommand, exportTransformersErr)
 	}

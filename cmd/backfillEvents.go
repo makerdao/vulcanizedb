@@ -41,7 +41,13 @@ func init() {
 }
 
 func backFillEvents() error {
-	ethEventInitializers, _, _, exportTransformersErr := exportTransformers()
+	genConfig, configErr := prepConfig()
+	if configErr != nil {
+		LogWithCommand.Fatalf("SubCommand %v: failed to prepare config: %v", SubCommand, configErr)
+		return configErr
+	}
+
+	ethEventInitializers, _, _, exportTransformersErr := exportTransformers(genConfig)
 	if exportTransformersErr != nil {
 		LogWithCommand.Fatalf("SubCommand %v: exporting transformers failed: %v", SubCommand, exportTransformersErr)
 	}
