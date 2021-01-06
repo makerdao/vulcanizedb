@@ -1,4 +1,4 @@
-#Ethereum Node Specs
+# Ethereum Node Specs
 It is possible to sync and run an Ethereum node in several different ways based on the sync strategy being used, and 
 the pruning configuration. This document aims to explain those differences, and what is required for use with 
 VulcanizeDB.
