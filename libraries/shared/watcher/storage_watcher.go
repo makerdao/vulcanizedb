@@ -44,6 +44,9 @@ type IStorageWatcher interface {
 	StorageWatcherName() string
 }
 
+type Callback func() error
+type Throttler func(int, Callback) error
+
 type StorageWatcher struct {
 	db                        *postgres.DB
 	HeaderRepository          datastore.HeaderRepository
@@ -52,6 +55,8 @@ type StorageWatcher struct {
 	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
 	StatusWriter              fs.StatusWriter
 	DiffStatus                DiffStatusToWatch
+	Throttler                 Throttler
+	minWaitTime               int
 }
 
 type DiffStatusToWatch int
@@ -62,22 +67,25 @@ const (
 	Pending
 )
 
-func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter) StorageWatcher {
-	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, New)
+func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, throttleTime int) StorageWatcher {
+	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, throttleTime, New)
 }
 
-func UnrecognizedStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter) StorageWatcher {
-	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, Unrecognized)
+func UnrecognizedStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, throttleTime int) StorageWatcher {
+	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, throttleTime, Unrecognized)
 }
 
-func PendingStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter) StorageWatcher {
-	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, Pending)
+func PendingStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, throttleTime int) StorageWatcher {
+	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, throttleTime, Pending)
 }
 
-func createStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, diffStatus DiffStatusToWatch) StorageWatcher {
+func createStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, minWaitTime int, diffStatus DiffStatusToWatch) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Address]storage2.ITransformer)
+	passThroughThrottler := func(sleep int, f Callback) error {
+		return f()
+	}
 	return StorageWatcher{
 		db:                        db,
 		HeaderRepository:          headerRepository,
@@ -86,6 +94,8 @@ func createStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWrit
 		DiffBlocksFromHeadOfChain: backFromHeadOfChain,
 		StatusWriter:              statusWriter,
 		DiffStatus:                diffStatus,
+		Throttler:                 passThroughThrottler,
+		minWaitTime:               minWaitTime,
 	}
 }
 
@@ -115,7 +125,8 @@ func (watcher StorageWatcher) Execute() error {
 	}
 
 	for {
-		err := watcher.transformDiffs()
+		err := watcher.Throttler(watcher.minWaitTime, watcher.transformDiffs)
+		//		err := watcher.Throttler(0, watcher.transformDiffs)
 		if err != nil {
 			logrus.Errorf("error transforming diffs: %s", err.Error())
 			return err

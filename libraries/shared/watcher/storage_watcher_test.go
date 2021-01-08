@@ -34,13 +34,15 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const ThrottleTime = 30
+
 var _ = Describe("Storage Watcher", func() {
 	var statusWriter fakes.MockStatusWriter
 	Describe("AddTransformer", func() {
 		It("adds transformers", func() {
 			fakeAddress := fakes.FakeAddress
 			fakeTransformer := &mocks.MockStorageTransformer{Address: fakeAddress}
-			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
+			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, ThrottleTime)
 
 			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -51,7 +53,7 @@ var _ = Describe("Storage Watcher", func() {
 	Describe("Execute", func() {
 		When("a watcher is configured to watches 'new' storage diffs", func() {
 			statusWriter := fakes.MockStatusWriter{}
-			storageWatcher := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
+			storageWatcher := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, ThrottleTime)
 			input := ExecuteInput{
 				watcher:      &storageWatcher,
 				statusWriter: &statusWriter,
@@ -61,7 +63,7 @@ var _ = Describe("Storage Watcher", func() {
 
 		When("a watcher is configured to watches 'unrecognized' storage diffs", func() {
 			statusWriter := fakes.MockStatusWriter{}
-			storageWatcher := watcher.UnrecognizedStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
+			storageWatcher := watcher.UnrecognizedStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, ThrottleTime)
 			input := ExecuteInput{
 				watcher:      &storageWatcher,
 				statusWriter: &statusWriter,
@@ -71,7 +73,7 @@ var _ = Describe("Storage Watcher", func() {
 
 		When("a watcher is configured to watch 'pending' storage diffs", func() {
 			statusWriter := fakes.MockStatusWriter{}
-			storageWatcher := watcher.PendingStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
+			storageWatcher := watcher.PendingStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, ThrottleTime)
 			input := ExecuteInput{
 				watcher:      &storageWatcher,
 				statusWriter: &statusWriter,
@@ -86,6 +88,17 @@ type ExecuteInput struct {
 	statusWriter *fakes.MockStatusWriter
 }
 
+type MockThrottler struct {
+	sleepTime  int
+	calledWith watcher.Callback
+}
+
+func (throttler *MockThrottler) throttle(sleep int, f watcher.Callback) error {
+	throttler.sleepTime = sleep
+	throttler.calledWith = f
+	return f()
+}
+
 func SharedExecuteBehavior(input *ExecuteInput) {
 	var (
 		mockDiffsRepository  *mocks.MockStorageDiffRepository
@@ -94,6 +107,7 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 		storageWatcher       = input.watcher
 		contractAddress      common.Address
 		mockTransformer      *mocks.MockStorageTransformer
+		mockThrottler        = MockThrottler{}
 	)
 
 	BeforeEach(func() {
@@ -101,6 +115,7 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 		mockHeaderRepository = &fakes.MockHeaderRepository{}
 		contractAddress = test_data.FakeAddress()
 		mockTransformer = &mocks.MockStorageTransformer{Address: contractAddress}
+		storageWatcher.Throttler = mockThrottler.throttle
 		storageWatcher.HeaderRepository = mockHeaderRepository
 		storageWatcher.StorageDiffRepository = mockDiffsRepository
 		storageWatcher.AddTransformers([]storage.TransformerInitializer{mockTransformer.FakeTransformerInitializer})
@@ -125,6 +140,14 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
 			assertGetDiffsLimits(storageWatcher.DiffStatus, mockDiffsRepository, watcher.ResultsLimit)
+		})
+
+		It("throttles the transform calls to the passed in diffs", func() {
+			setGetDiffsErrors(storageWatcher.DiffStatus, mockDiffsRepository, []error{fakes.FakeError})
+
+			storageWatcher.Execute()
+
+			Expect(mockThrottler.sleepTime).To(Equal(ThrottleTime))
 		})
 
 		It("fetches diffs with min ID from subsequent queries when previous query returns max results", func() {
