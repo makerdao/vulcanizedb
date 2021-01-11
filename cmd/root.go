@@ -40,6 +40,7 @@ import (
 var (
 	LogWithCommand                       logrus.Entry
 	SubCommand                           string
+	blockNumberFlagName                  = "block-number"
 	cfgFile                              string
 	databaseConfig                       config.Database
 	newDiffBlockFromHeadOfChain          int64

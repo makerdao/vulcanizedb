@@ -7,10 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	blockNumberFlagName     string = "block-number"
-	deleteHeaderBlockNumber int64
-)
+var deleteHeaderBlockNumber int64
 
 // deleteHeaderCmd represents the deleteHeader command
 var deleteHeaderCmd = &cobra.Command{
