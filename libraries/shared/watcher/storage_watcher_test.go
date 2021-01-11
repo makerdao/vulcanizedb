@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"errors"
 	"math/rand"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
@@ -34,7 +35,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const ThrottleTime = 30
+const ThrottleTime = time.Duration(30)
 
 var _ = Describe("Storage Watcher", func() {
 	var statusWriter fakes.MockStatusWriter
@@ -89,11 +90,11 @@ type ExecuteInput struct {
 }
 
 type MockThrottler struct {
-	sleepTime  int
+	sleepTime  time.Duration
 	calledWith watcher.Callback
 }
 
-func (throttler *MockThrottler) throttle(sleep int, f watcher.Callback) error {
+func (throttler *MockThrottler) throttle(sleep time.Duration, f watcher.Callback) error {
 	throttler.sleepTime = sleep
 	throttler.calledWith = f
 	return f()

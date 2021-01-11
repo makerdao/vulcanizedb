@@ -19,7 +19,7 @@ package watcher
 import "time"
 
 type Callback func() error
-type ThrottlerFunc func(int, Callback) error
+type ThrottlerFunc func(time.Duration, Callback) error
 
 type Timer interface {
 	WaitFor(sleep time.Duration)

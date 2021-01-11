@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	storage2 "github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
@@ -53,7 +54,7 @@ type StorageWatcher struct {
 	StatusWriter              fs.StatusWriter
 	DiffStatus                DiffStatusToWatch
 	Throttler                 ThrottlerFunc
-	minWaitTime               int
+	minWaitTime               time.Duration
 }
 
 type DiffStatusToWatch int
@@ -64,25 +65,24 @@ const (
 	Pending
 )
 
-func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, throttleTime int) StorageWatcher {
-	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, throttleTime, New)
+func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, minWaitTime time.Duration) StorageWatcher {
+	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, minWaitTime, New)
 }
 
-func UnrecognizedStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, throttleTime int) StorageWatcher {
-	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, throttleTime, Unrecognized)
+func UnrecognizedStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, minWaitTime time.Duration) StorageWatcher {
+	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, minWaitTime, Unrecognized)
 }
 
-func PendingStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, throttleTime int) StorageWatcher {
-	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, throttleTime, Pending)
+func PendingStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, minWaitTime time.Duration) StorageWatcher {
+	return createStorageWatcher(db, backFromHeadOfChain, statusWriter, minWaitTime, Pending)
 }
 
-func createStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, minWaitTime int, diffStatus DiffStatusToWatch) StorageWatcher {
+func createStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter, minWaitTime time.Duration, diffStatus DiffStatusToWatch) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Address]storage2.ITransformer)
-	passThroughThrottler := func(sleep int, f Callback) error {
-		return f()
-	}
+	throttler := NewThrottler(&StandardTimer{})
+
 	return StorageWatcher{
 		db:                        db,
 		HeaderRepository:          headerRepository,
@@ -91,7 +91,7 @@ func createStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWrit
 		DiffBlocksFromHeadOfChain: backFromHeadOfChain,
 		StatusWriter:              statusWriter,
 		DiffStatus:                diffStatus,
-		Throttler:                 passThroughThrottler,
+		Throttler:                 throttler.Throttle,
 		minWaitTime:               minWaitTime,
 	}
 }
@@ -123,7 +123,6 @@ func (watcher StorageWatcher) Execute() error {
 
 	for {
 		err := watcher.Throttler(watcher.minWaitTime, watcher.transformDiffs)
-		//		err := watcher.Throttler(0, watcher.transformDiffs)
 		if err != nil {
 			logrus.Errorf("error transforming diffs: %s", err.Error())
 			return err
