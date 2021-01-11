@@ -44,9 +44,6 @@ type IStorageWatcher interface {
 	StorageWatcherName() string
 }
 
-type Callback func() error
-type Throttler func(int, Callback) error
-
 type StorageWatcher struct {
 	db                        *postgres.DB
 	HeaderRepository          datastore.HeaderRepository
@@ -55,7 +52,7 @@ type StorageWatcher struct {
 	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
 	StatusWriter              fs.StatusWriter
 	DiffStatus                DiffStatusToWatch
-	Throttler                 Throttler
+	Throttler                 ThrottlerFunc
 	minWaitTime               int
 }
 
