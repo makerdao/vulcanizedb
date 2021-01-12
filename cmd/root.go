@@ -152,7 +152,7 @@ func init() {
 	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database hostname")
 	rootCmd.PersistentFlags().String("database-user", "", "database user")
 	rootCmd.PersistentFlags().String("database-password", "", "database password")
-	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
+	rootCmd.PersistentFlags().String("client-ipcPath", "", "rpc path to client node or geth.ipc file")
 	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
 	rootCmd.PersistentFlags().String("log-level", logrus.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
 	rootCmd.PersistentFlags().String("sentry-dsn", "", "Sentry DSN")
