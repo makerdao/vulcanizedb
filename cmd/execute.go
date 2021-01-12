@@ -150,7 +150,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *sync.WaitGroup) {
 func watchEthStorage(w watcher.IStorageWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the storage.TransformerInitializer set using the storage watcher
-	LogWithCommand.Info("executing storage transformers")
+	LogWithCommand.Infof("executing %s storage transformers", w.StorageWatcherName())
 	err := w.Execute()
 	if err != nil {
 		LogWithCommand.Fatalf("error executing storage watcher: %s", err.Error())
