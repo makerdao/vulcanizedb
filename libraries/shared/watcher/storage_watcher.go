@@ -35,7 +35,7 @@ import (
 
 var (
 	ErrHeaderMismatch = errors.New("header hash doesn't match between db and diff")
-	ReorgWindow       = 250
+	ReorgWindow       = 50
 	ResultsLimit      = 500
 )
 
@@ -122,6 +122,7 @@ func (watcher StorageWatcher) Execute() error {
 	}
 
 	for {
+		logrus.Infof("throttling to %v", watcher.minWaitTime)
 		err := watcher.Throttler(watcher.minWaitTime, watcher.transformDiffs)
 		if err != nil {
 			logrus.Errorf("error transforming diffs: %s", err.Error())
