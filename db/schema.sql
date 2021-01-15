@@ -745,7 +745,7 @@ ALTER TABLE ONLY public.receipts
 --
 
 ALTER TABLE ONLY public.storage_diff
-    ADD CONSTRAINT storage_diff_block_height_block_hash_address_storage_key_st_key UNIQUE (block_height, block_hash, address, storage_key, storage_value);
+    ADD CONSTRAINT storage_diff_block_height_block_hash_address_storage_key_st_key UNIQUE (block_height, block_hash, address, storage_key, storage_value, status);
 
 
 --

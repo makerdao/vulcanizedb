@@ -102,6 +102,21 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(updatedDiffErr).NotTo(HaveOccurred())
 			Expect(storageDiffUpdatedRes.Created).NotTo(Equal(storageDiffUpdatedRes.Updated))
 		})
+
+		It("allows for diffs with the same block_height, address, storage_key, storage_value combination if the status is different", func() {
+			diffID, createErr := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(createErr).NotTo(HaveOccurred())
+			markTransformedErr := repo.MarkTransformed(diffID)
+			Expect(markTransformedErr).NotTo(HaveOccurred())
+
+			_, createTwoErr := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(createTwoErr).NotTo(HaveOccurred())
+
+			var count int
+			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(2))
+		})
 	})
 
 	Describe("CreateBackFilledStorageValue", func() {
