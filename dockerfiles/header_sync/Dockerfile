@@ -20,6 +20,7 @@ COPY --from=builder /go/bin/goose goose
 # needed for waiting until postgres is ready before starting from docker-compose
 COPY --from=builder /vulcanizedb/dockerfiles/wait-for-it.sh .
 
+# NOTE: You may need to update this in your cloud provider config in addition to changes here
 HEALTHCHECK CMD test -f /tmp/header_sync_health_check
 
 # need to execute with a shell to access env variables
