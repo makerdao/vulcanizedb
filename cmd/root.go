@@ -111,11 +111,14 @@ func logLevel() error {
 func setupSentryHook() error {
 	sentryEnv := viper.GetString("sentry.env")
 	sentryDSN := viper.GetString("sentry.dsn")
+	if sentryDSN == "" {
+		logrus.Info("skipping Sentry setup because missing DSN")
+		return nil
+	}
 
 	sentryErr := sentry.Init(sentry.ClientOptions{
 		Dsn:         sentryDSN,
 		Environment: sentryEnv,
-		Debug:       true,
 	})
 	if sentryErr != nil {
 		return fmt.Errorf("error initializing Sentry: %w", sentryErr)
@@ -130,7 +133,8 @@ func setupSentryHook() error {
 		return fmt.Errorf("error creating Sentry hook for logrus: %w", hookErr)
 	}
 
-	// easy to hit the default timeout of 100ms, so increase it to reduce clutter in logs
+	sentryHook.StacktraceConfiguration.Enable = true
+	// it's easy to hit the default timeout of 100ms, so increase it to reduce clutter in logs
 	sentryHook.Timeout = 2 * time.Second
 	logrus.AddHook(sentryHook)
 	return nil
