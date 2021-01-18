@@ -488,6 +488,114 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(diffErr).To(MatchError(sql.ErrNoRows))
 		})
 	})
+
+	Describe("GetDiffsForBlockHeightRange", func() {
+		var (
+			blockHeight, blockHeight2 int
+			id1, id2 int64
+			fakePersistedDiff, fakePersistedDiff2 types.PersistedDiff
+		)
+
+		BeforeEach(func() {
+			blockHeight = fakeStorageDiff.BlockHeight
+			blockHeight2 = blockHeight + 1
+			var create1Err, create2Err error
+			id1, create1Err = repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(create1Err).NotTo(HaveOccurred())
+			fakeStorageDiff2 := types.RawDiff{
+				Address:      test_data.FakeAddress(),
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  blockHeight2,
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
+			}
+			id2, create2Err = repo.CreateStorageDiff(fakeStorageDiff2)
+			Expect(create2Err).NotTo(HaveOccurred())
+
+			fakePersistedDiff = types.PersistedDiff{
+				RawDiff:   fakeStorageDiff,
+				ID:        id1,
+				EthNodeID: db.NodeID,
+				Status:    storage.New,
+			}
+			fakePersistedDiff2 = types.PersistedDiff{
+				RawDiff:   fakeStorageDiff2,
+				ID:        id2,
+				EthNodeID: db.NodeID,
+				Status:    storage.New,
+			}
+		})
+
+		It("returns all diffs where the block height is between the two given heights", func() {
+			diffs, diffErr := repo.GetDiffsForBlockHeightRange(int64(blockHeight), int64(blockHeight2))
+			Expect(diffErr).NotTo(HaveOccurred())
+			Expect(len(diffs)).To(Equal(2))
+			Expect(diffs).To(ConsistOf([]types.PersistedDiff{fakePersistedDiff, fakePersistedDiff2}))
+		})
+
+		It("doesn't return any diffs with block heights outside of the given range", func() {
+			blockHeight3 := blockHeight2 + 1
+			fakeStorageDiff3 := types.RawDiff{
+				Address:      test_data.FakeAddress(),
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  blockHeight3,
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
+			}
+			id3, create3Err := repo.CreateStorageDiff(fakeStorageDiff3)
+			Expect(create3Err).NotTo(HaveOccurred())
+			fakePersistedDiff3 := types.PersistedDiff{
+				RawDiff:   fakeStorageDiff3,
+				ID:        id3,
+				EthNodeID: db.NodeID,
+				Status:    storage.New,
+			}
+
+			diffs, diffErr := repo.GetDiffsForBlockHeightRange(int64(blockHeight), int64(blockHeight2))
+			Expect(diffErr).NotTo(HaveOccurred())
+			Expect(len(diffs)).To(Equal(2))
+			Expect(diffs).NotTo(ContainElement(fakePersistedDiff3))
+		})
+
+		It("returns more than one diff per block height if in the storage_diff table", func() {
+			anotherStorageDiffForBlock2 := types.RawDiff{
+				Address:      test_data.FakeAddress(),
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  blockHeight2,
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
+			}
+			id3, create3Err := repo.CreateStorageDiff(anotherStorageDiffForBlock2)
+			Expect(create3Err).NotTo(HaveOccurred())
+			anotherPersistedDiffForBlock2 := types.PersistedDiff{
+				RawDiff:   anotherStorageDiffForBlock2,
+				ID:        id3,
+				EthNodeID: db.NodeID,
+				Status:    storage.New,
+			}
+
+			diffs, diffErr := repo.GetDiffsForBlockHeightRange(int64(blockHeight), int64(blockHeight2))
+			Expect(diffErr).NotTo(HaveOccurred())
+			Expect(len(diffs)).To(Equal(3))
+			Expect(diffs).To(ContainElement(anotherPersistedDiffForBlock2))
+		})
+
+		It("handles when the start and end block height are the same", func() {
+			diffs, diffErr := repo.GetDiffsForBlockHeightRange(int64(blockHeight), int64(blockHeight))
+			Expect(diffErr).NotTo(HaveOccurred())
+			Expect(len(diffs)).To(Equal(1))
+			Expect(diffs).To(ConsistOf([]types.PersistedDiff{fakePersistedDiff}))
+		})
+
+		It("returns an empty slice if there are no diffs in the given range", func() {
+			blockHeight3 := blockHeight2 + 1
+			blockHeight4 := blockHeight3 + 1
+
+			diffs, diffErr := repo.GetDiffsForBlockHeightRange(int64(blockHeight3), int64(blockHeight4))
+			Expect(diffErr).NotTo(HaveOccurred())
+			Expect(len(diffs)).To(Equal(0))
+		})
+	})
 })
 
 func insertTestDiff(persistedDiff types.PersistedDiff, db *postgres.DB) {

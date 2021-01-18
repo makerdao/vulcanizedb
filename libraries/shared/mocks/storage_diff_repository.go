@@ -46,6 +46,10 @@ type MockStorageDiffRepository struct {
 	GetFirstDiffBlockHeightPassed              int64
 }
 
+func (repository *MockStorageDiffRepository) GetDiffsForBlockHeightRange(startingBlockHeight, endingBlockHeight int64) ([]types.PersistedDiff, error) {
+	panic("implement me")
+}
+
 func (repository *MockStorageDiffRepository) CreateStorageDiff(rawDiff types.RawDiff) (int64, error) {
 	repository.CreatePassedRawDiffs = append(repository.CreatePassedRawDiffs, rawDiff)
 	return 0, nil

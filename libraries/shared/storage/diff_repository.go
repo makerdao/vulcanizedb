@@ -35,6 +35,7 @@ type DiffRepository interface {
 	MarkUnwatched(id int64) error
 	MarkPending(id int64) error
 	GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error)
+	GetDiffsForBlockHeightRange(startingBlockHeight, endingBlockHeight int64) ([]types.PersistedDiff, error)
 }
 
 var (
@@ -154,3 +155,15 @@ func (repository diffRepository) GetFirstDiffIDForBlockHeight(blockHeight int64)
 	}
 	return diffID, nil
 }
+
+func (repository diffRepository) GetDiffsForBlockHeightRange(startingBlockHeight, endingBlockHeight int64) ([]types.PersistedDiff, error) {
+	var diffs []types.PersistedDiff
+	err := repository.db.Select(&diffs,
+		`SELECT id, address, block_height, block_hash, storage_key, storage_value, eth_node_id, status, from_backfill FROM storage_diff WHERE block_height BETWEEN $1 AND $2`,
+		startingBlockHeight, endingBlockHeight)
+	if err != nil {
+		return diffs, fmt.Errorf("error getting first diffs from block height range %d to %d: %w", startingBlockHeight, endingBlockHeight, err)
+	}
+	return diffs, nil
+}
+
