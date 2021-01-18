@@ -2,6 +2,8 @@ package backfill
 
 import (
 	"errors"
+	"fmt"
+	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -57,18 +59,27 @@ func (r *StorageValueLoader) Run() error {
 	if getKeysErr != nil {
 		return getKeysErr
 	}
-	headers, getHeadersErr := r.HeaderRepo.GetHeadersInRange(r.startingBlock, r.endingBlock)
-	if getHeadersErr != nil {
-		return getHeadersErr
+
+	ranges, rangeErr := logs.ChunkRanges(r.startingBlock, r.endingBlock, logs.HeaderChunkSize)
+	if rangeErr != nil {
+		return fmt.Errorf("error breaking range of headers into chunks: %w", rangeErr)
 	}
 
-	for _, header := range headers {
-		persistStorageErr := r.getAndPersistStorageValues(header.BlockNumber, header.Hash)
-		if persistStorageErr != nil {
-			return persistStorageErr
+	for _, chunk := range ranges {
+		headers, getHeadersErr := r.HeaderRepo.GetHeadersInRange(chunk[logs.StartInterval], chunk[logs.EndInterval])
+		if getHeadersErr != nil {
+			return getHeadersErr
 		}
 
+		for _, header := range headers {
+			persistStorageErr := r.getAndPersistStorageValues(header.BlockNumber, header.Hash)
+			if persistStorageErr != nil {
+				return persistStorageErr
+			}
+
+		}
 	}
+
 	logrus.Infof("Finished persisting storage values for %v addresses from block %v to %v.", len(r.storageByAddress), r.startingBlock, r.endingBlock)
 
 	return nil

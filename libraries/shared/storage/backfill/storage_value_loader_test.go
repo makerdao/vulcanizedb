@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/backfill"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -124,6 +125,32 @@ var _ = Describe("StorageValueLoader", func() {
 		Expect(runnerErr).NotTo(HaveOccurred())
 		Expect(headerRepo.GetHeadersInRangeStartingBlocks).To(ConsistOf(blockOne))
 		Expect(headerRepo.GetHeadersInRangeEndingBlocks).To(ConsistOf(blockTwo))
+	})
+
+	It("chunks headers if range greater than interval defined by HeaderChunkSize", func() {
+		initializers = []storage.TransformerInitializer{initializerOne, initializerTwo, initializerThree}
+		runner = backfill.NewStorageValueLoader(bc, nil, initializers, blockOne, blockTwo+logs.HeaderChunkSize)
+
+		diffRepo = mocks.MockStorageDiffRepository{}
+		runner.StorageDiffRepo = &diffRepo
+
+		headerRepo = fakes.MockHeaderRepository{}
+		blockOneHeader = fakes.FakeHeader
+		blockOneHeader.BlockNumber = blockOne
+		headerRepo.AllHeaders = []core.Header{blockOneHeader}
+		runner.HeaderRepo = &headerRepo
+
+		err := runner.Run()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(headerRepo.GetHeadersInRangeStartingBlocks).To(ConsistOf([]int64{
+			blockOne,
+			blockOne + logs.HeaderChunkSize,
+		}))
+		Expect(headerRepo.GetHeadersInRangeEndingBlocks).To(ConsistOf([]int64{
+			blockOne + logs.HeaderChunkSize - 1,
+			blockOne + logs.HeaderChunkSize + 1,
+		}))
 	})
 
 	It("returns an error if a header for the given block cannot be retrieved", func() {
