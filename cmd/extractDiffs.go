@@ -49,6 +49,7 @@ func validateDiffs(validationTicker *time.Ticker, blockChain core.BlockChain, db
 	for {
 		select {
 		case <-validationTicker.C:
+			LogWithCommand.Info("validating diffs...")
 			validateErr := validator.ValidateDiffs()
 			if validateErr != nil {
 				LogWithCommand.Fatal("Error validating diffs: %s", validateErr)

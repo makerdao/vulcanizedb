@@ -33,6 +33,7 @@ func (a ByBlockNumber) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
 func (v StorageDiffValidator) ValidateDiffs() error {
 	window, makeWindowErr := MakeValidationWindow(v.blockChain, v.windowSize)
+	log.Info("Validation window: ", window)
 	if makeWindowErr != nil {
 		return fmt.Errorf("error creating validation window: %s", makeWindowErr.Error())
 	}
