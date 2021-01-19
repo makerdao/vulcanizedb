@@ -119,6 +119,12 @@ Documentation on how to write, build and run custom transformers as Go plugins c
 - `make integrationtest` will run just the integration tests
 - `make test` and `make integrationtest` both setup a clean `vulcanize_testing` db
 
+### Error monitoring with Sentry
+To enable error reporting with Sentry, configure the Sentry DSN and environment.
+As environment variables: `SENTRY_DSN` and `SENTRY_ENV`.
+As flags to any command: `--sentry-dsn` and `--sentry-env`.
+As fields in a config file: `sentry.dsn` and `sentry.env`.
+
 
 ## Contributing
 Contributions are welcome!

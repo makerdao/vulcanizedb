@@ -44,6 +44,7 @@ CLI flags, or it will attempt to run with default values.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
+
 		err := headerSync()
 		if err != nil {
 			LogWithCommand.Fatalf("error executing header sync: %s", err.Error())

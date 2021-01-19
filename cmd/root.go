@@ -24,6 +24,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/evalphobia/logrus_sentry"
+	"github.com/getsentry/sentry-go"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
@@ -73,9 +75,12 @@ func initFuncs(cmd *cobra.Command, args []string) {
 	setViperConfigs()
 	logLvlErr := logLevel()
 	if logLvlErr != nil {
-		logrus.Fatalf("Could not set log level: %s", logLvlErr.Error())
+		logrus.Fatalf("could not set log level: %s", logLvlErr.Error())
 	}
-
+	sentryErr := setupSentryHook()
+	if sentryErr != nil {
+		logrus.Fatalf("could not setup Sentry: %s", sentryErr)
+	}
 }
 
 func setViperConfigs() {
@@ -103,6 +108,38 @@ func logLevel() error {
 	return nil
 }
 
+func setupSentryHook() error {
+	sentryEnv := viper.GetString("sentry.env")
+	sentryDSN := viper.GetString("sentry.dsn")
+	if sentryDSN == "" {
+		logrus.Info("skipping Sentry setup because missing DSN")
+		return nil
+	}
+
+	sentryErr := sentry.Init(sentry.ClientOptions{
+		Dsn:         sentryDSN,
+		Environment: sentryEnv,
+	})
+	if sentryErr != nil {
+		return fmt.Errorf("error initializing Sentry: %w", sentryErr)
+	}
+
+	sentryHook, hookErr := logrus_sentry.NewSentryHook(sentryDSN, []logrus.Level{
+		logrus.ErrorLevel,
+		logrus.FatalLevel,
+		logrus.PanicLevel,
+	})
+	if hookErr != nil {
+		return fmt.Errorf("error creating Sentry hook for logrus: %w", hookErr)
+	}
+
+	sentryHook.StacktraceConfiguration.Enable = true
+	// it's easy to hit the default timeout of 100ms, so increase it to reduce clutter in logs
+	sentryHook.Timeout = 2 * time.Second
+	logrus.AddHook(sentryHook)
+	return nil
+}
+
 func init() {
 	// When searching for env variables, replace dots in config keys with underscores
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -118,6 +155,8 @@ func init() {
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
 	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
 	rootCmd.PersistentFlags().String("log-level", logrus.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
+	rootCmd.PersistentFlags().String("sentry-dsn", "", "Sentry DSN")
+	rootCmd.PersistentFlags().String("sentry-env", "", "Sentry environment")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -127,6 +166,9 @@ func init() {
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
 	viper.BindPFlag("exporter.fileName", rootCmd.PersistentFlags().Lookup("exporter-name"))
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
+	viper.BindPFlag("sentry.dsn", rootCmd.PersistentFlags().Lookup("sentry-dsn"))
+	viper.BindPFlag("sentry.env", rootCmd.PersistentFlags().Lookup("sentry-env"))
+
 }
 
 func initConfig() {
