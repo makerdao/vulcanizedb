@@ -41,6 +41,7 @@ var (
 type IStorageWatcher interface {
 	AddTransformers(initializers []storage2.TransformerInitializer)
 	Execute() error
+	StorageWatcherName() string
 }
 
 type StorageWatcher struct {
@@ -86,6 +87,18 @@ func createStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWrit
 		StatusWriter:              statusWriter,
 		DiffStatus:                diffStatus,
 	}
+}
+
+func (watcher StorageWatcher) StorageWatcherName() string {
+	switch watcher.DiffStatus {
+	case New:
+		return "New"
+	case Pending:
+		return "Pending"
+	case Unrecognized:
+		return "Unrecognized"
+	}
+	return "Unknown DiffStatus"
 }
 
 func (watcher StorageWatcher) AddTransformers(initializers []storage2.TransformerInitializer) {
@@ -192,7 +205,7 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 
 	executeErr := t.Execute(diff)
 	if executeErr != nil {
-		return fmt.Errorf("error executing storage transformer: %w", executeErr)
+		return fmt.Errorf("error executing %s storage transformer: %w", watcher.StorageWatcherName(), executeErr)
 	}
 
 	markTransformedErr := watcher.StorageDiffRepository.MarkTransformed(diff.ID)
