@@ -110,14 +110,14 @@ func executeTransformers() {
 	if len(ethStorageInitializers) > 0 {
 		newDiffStorageHealthCheckMessage := []byte("storage watcher for new diffs starting\n")
 		newDiffStatusWriter := fs.NewStatusWriter(healthCheckFile, newDiffStorageHealthCheckMessage)
-		newDiffStorageWatcher := watcher.NewStorageWatcher(&db, newDiffBlockFromHeadOfChain, newDiffStatusWriter, minTimeBetweenTransforms)
+		newDiffStorageWatcher := watcher.NewStorageWatcher(&db, newDiffBlockFromHeadOfChain, newDiffStatusWriter, 0)
 		newDiffStorageWatcher.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&newDiffStorageWatcher, &wg)
 
 		unrecognizedDiffStorageHealthCheckMessage := []byte("storage watcher for unrecognized diffs starting\n")
 		unrecognizedDiffStatusWriter := fs.NewStatusWriter(healthCheckFile, unrecognizedDiffStorageHealthCheckMessage)
-		unrecognizedDiffStorageWatcher := watcher.UnrecognizedStorageWatcher(&db, unrecognizedDiffBlockFromHeadOfChain, unrecognizedDiffStatusWriter, minTimeBetweenTransforms)
+		unrecognizedDiffStorageWatcher := watcher.UnrecognizedStorageWatcher(&db, unrecognizedDiffBlockFromHeadOfChain, unrecognizedDiffStatusWriter, 0)
 		unrecognizedDiffStorageWatcher.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&unrecognizedDiffStorageWatcher, &wg)
