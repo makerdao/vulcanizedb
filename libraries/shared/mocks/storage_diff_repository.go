@@ -96,6 +96,10 @@ func (repository *MockStorageDiffRepository) MarkNoncanonical(id int64) error {
 	return nil
 }
 
+func (repository *MockStorageDiffRepository) MarkNoncanonicalDiffsAsNew(blockNumber int64) error {
+	panic("implement me")
+}
+
 func (repository *MockStorageDiffRepository) MarkUnrecognized(id int64) error {
 	repository.MarkUnrecognizedPassedID = id
 	return nil

@@ -41,13 +41,7 @@ var _ = Describe("Storage diffs repository", func() {
 	BeforeEach(func() {
 		test_config.CleanTestDB(db)
 		repo = storage.NewDiffRepository(db)
-		fakeStorageDiff = types.RawDiff{
-			Address:      test_data.FakeAddress(),
-			BlockHash:    test_data.FakeHash(),
-			BlockHeight:  rand.Int(),
-			StorageKey:   test_data.FakeHash(),
-			StorageValue: test_data.FakeHash(),
-		}
+		fakeStorageDiff = createFakeRawDiff(rand.Int())
 	})
 
 	type dbStorageDiff struct {
@@ -227,12 +221,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 		DescribeTable("GetNewDiffs",
 			func(status string, present bool) {
-				fakePersistedDiff := types.PersistedDiff{
-					RawDiff:   fakeStorageDiff,
-					ID:        rand.Int63(),
-					EthNodeID: db.NodeID,
-					Status:    status,
-				}
+				fakePersistedDiff := createFakePersistedDiff(fakeStorageDiff, status, db.NodeID)
 				insertTestDiff(fakePersistedDiff, db)
 
 				diffs, err := repo.GetNewDiffs(0, 1)
@@ -253,12 +242,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 		DescribeTable("GetPendingDiffs",
 			func(status string, present bool) {
-				fakePersistedDiff := types.PersistedDiff{
-					RawDiff:   fakeStorageDiff,
-					ID:        rand.Int63(),
-					EthNodeID: db.NodeID,
-					Status:    status,
-				}
+				fakePersistedDiff := createFakePersistedDiff(fakeStorageDiff, status, db.NodeID)
 				insertTestDiff(fakePersistedDiff, db)
 
 				diffs, err := repo.GetPendingDiffs(0, 1)
@@ -279,12 +263,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 		DescribeTable("GetUnrecognizedDiffs",
 			func(status string, present bool) {
-				fakePersistedDiff := types.PersistedDiff{
-					RawDiff:   fakeStorageDiff,
-					ID:        rand.Int63(),
-					EthNodeID: db.NodeID,
-					Status:    status,
-				}
+				fakePersistedDiff := createFakePersistedDiff(fakeStorageDiff, status, db.NodeID)
 				insertTestDiff(fakePersistedDiff, db)
 
 				diffs, err := repo.GetUnrecognizedDiffs(0, 1)
@@ -322,19 +301,8 @@ var _ = Describe("Storage diffs repository", func() {
 			func(query queryFunc, status string) {
 				blockZero := rand.Int()
 				for i := 0; i < 2; i++ {
-					fakeRawDiff := types.RawDiff{
-						Address:      test_data.FakeAddress(),
-						BlockHash:    test_data.FakeHash(),
-						BlockHeight:  blockZero + i,
-						StorageKey:   test_data.FakeHash(),
-						StorageValue: test_data.FakeHash(),
-					}
-					persistedDiff := types.PersistedDiff{
-						RawDiff:   fakeRawDiff,
-						ID:        rand.Int63(),
-						Status:    status,
-						EthNodeID: db.NodeID,
-					}
+					rawDiff := createFakeRawDiff(blockZero + i)
+					persistedDiff := createFakePersistedDiff(rawDiff, status, db.NodeID)
 					insertTestDiff(persistedDiff, db)
 				}
 
@@ -359,12 +327,7 @@ var _ = Describe("Storage diffs repository", func() {
 	Describe("Changing the diff status", func() {
 		var fakePersistedDiff types.PersistedDiff
 		BeforeEach(func() {
-			fakePersistedDiff = types.PersistedDiff{
-				RawDiff:   fakeStorageDiff,
-				ID:        rand.Int63(),
-				Status:    storage.New,
-				EthNodeID: db.NodeID,
-			}
+			fakePersistedDiff = createFakePersistedDiff(fakeStorageDiff, storage.New, db.NodeID)
 			insertTestDiff(fakePersistedDiff, db)
 		})
 
@@ -420,16 +383,45 @@ var _ = Describe("Storage diffs repository", func() {
 		})
 	})
 
+	Describe("Marking non-canonical diffs as new", func() {
+		It("does nothing if no diffs in block are marked non-canonical", func() {
+			blockHeight := rand.Int()
+			numDiffs := 3
+			for i := 0; i < numDiffs; i++ {
+				rawDiff := createFakeRawDiff(blockHeight)
+				persistedDiff := createFakePersistedDiff(rawDiff, storage.Transformed, db.NodeID)
+				insertTestDiff(persistedDiff, db)
+			}
+
+			err := repo.MarkNoncanonicalDiffsAsNew(int64(blockHeight))
+
+			Expect(err).NotTo(HaveOccurred())
+			var count int
+			getErr := db.Get(&count, `SELECT COUNT(*) FROM public.storage_diff WHERE status = $1`, storage.Transformed)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(numDiffs))
+		})
+
+		It("updates diffs marked as non-canonical to 'new'", func() {
+			blockHeight := rand.Int()
+			rawDiff := createFakeRawDiff(blockHeight)
+			persistedDiff := createFakePersistedDiff(rawDiff, storage.Noncanonical, db.NodeID)
+			insertTestDiff(persistedDiff, db)
+
+			err := repo.MarkNoncanonicalDiffsAsNew(int64(blockHeight))
+
+			Expect(err).NotTo(HaveOccurred())
+			var status string
+			getErr := db.Get(&status, `SELECT status FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(status).To(Equal(storage.New))
+		})
+	})
+
 	Describe("GetFirstDiffIDForBlockHeight", func() {
 		It("sends first diff for a given block height", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
-			fakeStorageDiff2 := types.RawDiff{
-				Address:      test_data.FakeAddress(),
-				BlockHash:    test_data.FakeHash(),
-				BlockHeight:  blockHeight,
-				StorageKey:   test_data.FakeHash(),
-				StorageValue: test_data.FakeHash(),
-			}
+			fakeStorageDiff2 := createFakeRawDiff(blockHeight)
 
 			id1, create1Err := repo.CreateStorageDiff(fakeStorageDiff)
 			Expect(create1Err).NotTo(HaveOccurred())
@@ -443,13 +435,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 		It("sends a diff for the next block height if one doesn't exist for the block passed in", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
-			fakeStorageDiff2 := types.RawDiff{
-				Address:      test_data.FakeAddress(),
-				BlockHash:    test_data.FakeHash(),
-				BlockHeight:  blockHeight,
-				StorageKey:   test_data.FakeHash(),
-				StorageValue: test_data.FakeHash(),
-			}
+			fakeStorageDiff2 := createFakeRawDiff(blockHeight)
 
 			id1, create1Err := repo.CreateStorageDiff(fakeStorageDiff)
 			Expect(create1Err).NotTo(HaveOccurred())
@@ -463,13 +449,7 @@ var _ = Describe("Storage diffs repository", func() {
 		})
 
 		It("won't fail if all of the diffs within the id range are already checked", func() {
-			fakePersistedDiff := types.PersistedDiff{
-				RawDiff:   fakeStorageDiff,
-				ID:        rand.Int63(),
-				Status:    storage.Transformed,
-				EthNodeID: db.NodeID,
-			}
-
+			fakePersistedDiff := createFakePersistedDiff(fakeStorageDiff, storage.Transformed, db.NodeID)
 			insertTestDiff(fakePersistedDiff, db)
 
 			var insertedDiffID int64
@@ -489,6 +469,25 @@ var _ = Describe("Storage diffs repository", func() {
 		})
 	})
 })
+
+func createFakeRawDiff(blockHeight int) types.RawDiff {
+	return types.RawDiff{
+		Address:      test_data.FakeAddress(),
+		BlockHash:    test_data.FakeHash(),
+		BlockHeight:  blockHeight,
+		StorageKey:   test_data.FakeHash(),
+		StorageValue: test_data.FakeHash(),
+	}
+}
+
+func createFakePersistedDiff(rawDiff types.RawDiff, status string, nodeID int64) types.PersistedDiff {
+	return types.PersistedDiff{
+		RawDiff:   rawDiff,
+		ID:        rand.Int63(),
+		Status:    status,
+		EthNodeID: nodeID,
+	}
+}
 
 func insertTestDiff(persistedDiff types.PersistedDiff, db *postgres.DB) {
 	rawDiff := persistedDiff.RawDiff

@@ -31,6 +31,7 @@ type DiffRepository interface {
 	GetPendingDiffs(minID, limit int) ([]types.PersistedDiff, error)
 	MarkTransformed(id int64) error
 	MarkNoncanonical(id int64) error
+	MarkNoncanonicalDiffsAsNew(blockNumber int64) error
 	MarkUnrecognized(id int64) error
 	MarkUnwatched(id int64) error
 	MarkPending(id int64) error
@@ -127,6 +128,11 @@ func (repository diffRepository) MarkNoncanonical(id int64) error {
 		return fmt.Errorf("error marking diff %d checked: %w", id, err)
 	}
 	return nil
+}
+
+func (repository diffRepository) MarkNoncanonicalDiffsAsNew(blockNumber int64) error {
+	_, err := repository.db.Exec(`UPDATE public.storage_diff SET status = $1 WHERE block_height = $2 AND status = $3`, New, blockNumber, Noncanonical)
+	return err
 }
 
 func (repository diffRepository) MarkUnwatched(id int64) error {
