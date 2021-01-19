@@ -40,14 +40,22 @@ type MockStorageDiffRepository struct {
 	MarkUnrecognizedPassedID                   int64
 	MarkNoncanonicalPassedID                   int64
 	MarkPendingPassedID                        int64
+	MarkPendingError                           error
 	MarkUnwatchedPassedID                      int64
 	GetFirstDiffIDToReturn                     int64
 	GetFirstDiffIDErr                          error
 	GetFirstDiffBlockHeightPassed              int64
+	GetDiffsForRangeStartingHeightPassed       int64
+	GetDiffsForRangeEndingHeightPassed         int64
+	GetDiffsForRangeToReturn                   []types.PersistedDiff
+	GetDiffsForRangeErr                        error
 }
 
 func (repository *MockStorageDiffRepository) GetDiffsForBlockHeightRange(startingBlockHeight, endingBlockHeight int64) ([]types.PersistedDiff, error) {
-	panic("implement me")
+	repository.GetDiffsForRangeStartingHeightPassed = startingBlockHeight
+	repository.GetDiffsForRangeEndingHeightPassed = endingBlockHeight
+
+	return repository.GetDiffsForRangeToReturn, repository.GetDiffsForRangeErr
 }
 
 func (repository *MockStorageDiffRepository) CreateStorageDiff(rawDiff types.RawDiff) (int64, error) {
@@ -112,7 +120,7 @@ func (repository *MockStorageDiffRepository) MarkUnwatched(id int64) error {
 
 func (repository *MockStorageDiffRepository) MarkPending(id int64) error {
 	repository.MarkPendingPassedID = id
-	return nil
+	return repository.MarkPendingError
 }
 
 func (repository *MockStorageDiffRepository) GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error) {

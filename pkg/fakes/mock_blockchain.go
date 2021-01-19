@@ -47,6 +47,8 @@ type MockBlockChain struct {
 	logQueryReturnLogs                 []types.Log
 	node                               core.Node
 	storageValuesToReturn              map[common.Address]map[int64][]byte
+	GetHeadersByNumbersToReturn        []core.Header
+	GetHeadersByNumbersError           error
 }
 
 func NewMockBlockChain() *MockBlockChain {
@@ -96,12 +98,19 @@ func (blockChain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Hea
 }
 
 func (blockChain *MockBlockChain) GetHeadersByNumbers(blockNumbers []int64) ([]core.Header, error) {
-	var headers []core.Header
-	for _, blockNumber := range blockNumbers {
-		var header = core.Header{BlockNumber: blockNumber}
-		headers = append(headers, header)
+	if len(blockChain.GetHeadersByNumbersToReturn) > 0 {
+		return blockChain.GetHeadersByNumbersToReturn, blockChain.GetHeadersByNumbersError
+	} else {
+		var headers []core.Header
+		for _, blockNumber := range blockNumbers {
+			var header = core.Header{
+				BlockNumber: blockNumber,
+				Hash:        FakeHash.Hex(),
+			}
+			headers = append(headers, header)
+		}
+		return headers, blockChain.GetHeadersByNumbersError
 	}
-	return headers, nil
 }
 
 func (blockChain *MockBlockChain) GetTransactions(transactionHashes []common.Hash) ([]core.TransactionModel, error) {

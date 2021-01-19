@@ -491,8 +491,8 @@ var _ = Describe("Storage diffs repository", func() {
 
 	Describe("GetDiffsForBlockHeightRange", func() {
 		var (
-			blockHeight, blockHeight2 int
-			id1, id2 int64
+			blockHeight, blockHeight2             int
+			id1, id2                              int64
 			fakePersistedDiff, fakePersistedDiff2 types.PersistedDiff
 		)
 

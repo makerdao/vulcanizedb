@@ -166,4 +166,3 @@ func (repository diffRepository) GetDiffsForBlockHeightRange(startingBlockHeight
 	}
 	return diffs, nil
 }
-

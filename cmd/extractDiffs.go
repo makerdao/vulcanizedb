@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/fs"
+	"github.com/makerdao/vulcanizedb/pkg/history"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -39,10 +43,26 @@ func init() {
 	extractDiffsCmd.Flags().StringVarP(&storageDiffsPath, storageDiffsPathFlag, "p", "", "location of storage diffs csv file")
 }
 
+func validateDiffs(validationTicker *time.Ticker, blockChain core.BlockChain, db *postgres.DB) {
+	storageDiffRepository := storage.NewDiffRepository(db)
+	validator := history.NewStorageDiffValidator(blockChain, storageDiffRepository, validationWindowSize)
+	for {
+		select {
+		case <-validationTicker.C:
+			validateErr := validator.ValidateDiffs()
+			if validateErr != nil {
+				LogWithCommand.Fatal("Error validating diffs: %s", validateErr)
+			}
+		}
+	}
+}
+
 func extractDiffs() {
 	// Setup bc and db objects
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+	validationTicker := time.NewTicker(pollingInterval)
+	defer validationTicker.Stop()
 
 	healthCheckFile := "/tmp/connection"
 	msg := []byte("geth storage fetcher connection established\n")
@@ -70,6 +90,8 @@ func extractDiffs() {
 
 		storageFetcher = fetcher.NewCsvTailStorageFetcher(tailer, statusWriter)
 	}
+
+	go validateDiffs(validationTicker, blockChain, &db)
 
 	// extract diffs
 	extractor := storage.NewDiffExtractor(storageFetcher, &db)
