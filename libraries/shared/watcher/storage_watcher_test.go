@@ -90,17 +90,6 @@ type ExecuteInput struct {
 	statusWriter *fakes.MockStatusWriter
 }
 
-type MockThrottler struct {
-	sleepTime  time.Duration
-	calledWith watcher.Callback
-}
-
-func (throttler *MockThrottler) throttle(sleep time.Duration, f watcher.Callback) error {
-	throttler.sleepTime = sleep
-	throttler.calledWith = f
-	return f()
-}
-
 func SharedExecuteBehavior(input *ExecuteInput) {
 	var (
 		mockDiffsRepository  *mocks.MockStorageDiffRepository
@@ -109,7 +98,7 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 		storageWatcher       = input.watcher
 		contractAddress      common.Address
 		mockTransformer      *mocks.MockStorageTransformer
-		mockThrottler        = MockThrottler{}
+		mockThrottler        = mocks.MockThrottler{}
 	)
 
 	BeforeEach(func() {
@@ -117,7 +106,7 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 		mockHeaderRepository = &fakes.MockHeaderRepository{}
 		contractAddress = test_data.FakeAddress()
 		mockTransformer = &mocks.MockStorageTransformer{Address: contractAddress}
-		storageWatcher.Throttler = mockThrottler.throttle
+		storageWatcher.Throttler = mockThrottler.Throttle
 		storageWatcher.HeaderRepository = mockHeaderRepository
 		storageWatcher.StorageDiffRepository = mockDiffsRepository
 		storageWatcher.AddTransformers([]storage.TransformerInitializer{mockTransformer.FakeTransformerInitializer})
@@ -149,7 +138,7 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 
 			storageWatcher.Execute()
 
-			Expect(mockThrottler.sleepTime).To(Equal(throttleTime))
+			Expect(mockThrottler.SleepTime).To(Equal(throttleTime))
 		})
 
 		It("fetches diffs with min ID from subsequent queries when previous query returns max results", func() {
