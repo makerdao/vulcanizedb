@@ -35,15 +35,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const ThrottleTime = time.Duration(30)
+var throttleTime = time.Duration(rand.Int63())
 
 var _ = Describe("Storage Watcher", func() {
 	var statusWriter fakes.MockStatusWriter
+
 	Describe("AddTransformer", func() {
 		It("adds transformers", func() {
 			fakeAddress := fakes.FakeAddress
 			fakeTransformer := &mocks.MockStorageTransformer{Address: fakeAddress}
-			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, ThrottleTime)
+			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, throttleTime)
 
 			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -54,7 +55,7 @@ var _ = Describe("Storage Watcher", func() {
 	Describe("Execute", func() {
 		When("a watcher is configured to watches 'new' storage diffs", func() {
 			statusWriter := fakes.MockStatusWriter{}
-			storageWatcher := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, ThrottleTime)
+			storageWatcher := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, throttleTime)
 			input := ExecuteInput{
 				watcher:      &storageWatcher,
 				statusWriter: &statusWriter,
@@ -64,7 +65,7 @@ var _ = Describe("Storage Watcher", func() {
 
 		When("a watcher is configured to watches 'unrecognized' storage diffs", func() {
 			statusWriter := fakes.MockStatusWriter{}
-			storageWatcher := watcher.UnrecognizedStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, ThrottleTime)
+			storageWatcher := watcher.UnrecognizedStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, throttleTime)
 			input := ExecuteInput{
 				watcher:      &storageWatcher,
 				statusWriter: &statusWriter,
@@ -74,7 +75,7 @@ var _ = Describe("Storage Watcher", func() {
 
 		When("a watcher is configured to watch 'pending' storage diffs", func() {
 			statusWriter := fakes.MockStatusWriter{}
-			storageWatcher := watcher.PendingStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, ThrottleTime)
+			storageWatcher := watcher.PendingStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter, throttleTime)
 			input := ExecuteInput{
 				watcher:      &storageWatcher,
 				statusWriter: &statusWriter,
@@ -148,7 +149,7 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 
 			storageWatcher.Execute()
 
-			Expect(mockThrottler.sleepTime).To(Equal(ThrottleTime))
+			Expect(mockThrottler.sleepTime).To(Equal(throttleTime))
 		})
 
 		It("fetches diffs with min ID from subsequent queries when previous query returns max results", func() {
