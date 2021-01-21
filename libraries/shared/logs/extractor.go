@@ -164,6 +164,7 @@ func (extractor LogExtractor) BackFillLogs(endingBlock int64) error {
 	}
 
 	for _, r := range ranges {
+		logrus.Infof("backfilling events from blocks %d-%d", r[StartInterval], r[EndInterval])
 		headers, headersErr := extractor.HeaderRepository.GetHeadersInRange(r[StartInterval], r[EndInterval])
 		if headersErr != nil {
 			logrus.Errorf("error fetching missing headers: %s", headersErr)
