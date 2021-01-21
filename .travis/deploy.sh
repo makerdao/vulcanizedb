@@ -20,7 +20,7 @@ else
 fi
 
 if [ -z "$ENVIRONMENT" ]; then
-    echo 'You must specifiy an envionrment (bash deploy.sh <ENVIRONMENT>).'
+    echo 'You must specifiy an environment (bash deploy.sh <ENVIRONMENT>).'
     echo 'Allowed values are "staging" or "prod"'
     exit 1
 fi
@@ -53,3 +53,6 @@ elif [ "$ENVIRONMENT" == "staging" ]; then
 else
    message UNKNOWN ENVIRONMENT
 fi
+
+# announce deploy
+.travis/announce.sh $ENVIRONMENT vdb-header-sync
