@@ -1,6 +1,4 @@
 #! /usr/bin/env bash
-# Announce a deploy
-
 set -e
 
 function message() {
@@ -23,12 +21,14 @@ elif [ "$ENVIRONMENT" == "staging" ]; then
 TAG=staging
 else
    message UNKNOWN ENVIRONMENT
+   echo 'Allowed values for environment are "staging" or "prod"'
+   exit 1
 fi
 
 PROCESS=$2
-if [ -z "$ENVIRONMENT" ] || [-z "$PROCESS"]; then
-    echo 'You must specifiy an environment and a process (bash deploy.sh <ENVIRONMENT> <PROCESS>).'
-    echo 'Allowed values for environment are "staging" or "prod"'
+if [ -z "$PROCESS" ]; then
+    message NO PROCESS NAME
+    echo 'You must specify process name, such as vdb-execute (bash announce.sh <ENVIRONMENT> <PROCESS>).'
     exit 1
 fi
 
