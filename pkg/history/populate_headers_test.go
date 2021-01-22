@@ -102,4 +102,26 @@ var _ = Describe("Populating headers", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 		Expect(statusWriter.WriteCalled).To(BeFalse())
 	})
+
+	Describe("RetrieveAndUpdateHeaders", func() {
+		It("returns an error if getting headers from the blockchain fails", func(){
+			blockChain := fakes.NewMockBlockChain()
+			blockChain.GetHeadersByNumbersErr = fakes.FakeError
+
+			_, err := history.RetrieveAndUpdateHeaders(blockChain, headerRepository, []int64{})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+
+		It("returns an error when Creating or updating the header fails", func() {
+			blockChain := fakes.NewMockBlockChain()
+			headerRepository.SetCreateOrUpdateHeaderReturnErr(fakes.FakeError)
+			_, err := history.RetrieveAndUpdateHeaders(blockChain, headerRepository, []int64{startingBlock})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+	})
+
 })
