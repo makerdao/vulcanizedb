@@ -125,7 +125,6 @@ func (watcher StorageWatcher) Execute() error {
 	for {
 		err := watcher.Throttler(watcher.minWaitTime, watcher.transformDiffs)
 		if err != nil {
-			logrus.Errorf("error transforming diffs: %s", err.Error())
 			return err
 		}
 	}
@@ -266,7 +265,6 @@ func (watcher StorageWatcher) handleTransformError(transformErr error, diff type
 		} else if isCommonTransformError(transformErr) {
 			logrus.Tracef("error transforming diff: %s", transformErr.Error())
 		} else {
-			logrus.Infof("error transforming diff: %s", transformErr.Error())
 			return transformErr
 		}
 	}
