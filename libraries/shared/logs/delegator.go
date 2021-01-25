@@ -65,7 +65,7 @@ func (delegator *LogDelegator) DelegateLogs(limit int) error {
 	for {
 		persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedEventLogs(minID, limit)
 		if fetchErr != nil {
-			logrus.Errorf("error loading logs from db: %s", fetchErr.Error())
+			logrus.Warnf("error loading logs from db: %s", fetchErr.Error())
 			return fetchErr
 		}
 
@@ -79,7 +79,7 @@ func (delegator *LogDelegator) DelegateLogs(limit int) error {
 
 		transformErr := delegator.delegateLogs(persistedLogs)
 		if transformErr != nil {
-			logrus.Errorf("error transforming logs: %s", transformErr)
+			logrus.Warnf("error transforming logs: %s", transformErr)
 			return transformErr
 		}
 
@@ -96,7 +96,7 @@ func (delegator *LogDelegator) delegateLogs(logs []core.EventLog) error {
 		logChunk := chunkedLogs[transformerName]
 		err := t.Execute(logChunk)
 		if err != nil {
-			logrus.Errorf("%v transformer failed to execute in watcher: %v", transformerName, err)
+			logrus.Warnf("%v transformer failed to execute in watcher: %v", transformerName, err)
 			return err
 		}
 	}

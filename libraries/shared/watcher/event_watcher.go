@@ -88,11 +88,11 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 	for {
 		select {
 		case delegateErr := <-delegateErrsChan:
-			logrus.Errorf("error delegating logs in event watcher: %s", delegateErr.Error())
+			logrus.Warnf("error delegating logs in event watcher: %s", delegateErr.Error())
 			close(executeQuitChan)
 			return delegateErr
 		case extractErr := <-extractErrsChan:
-			logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
+			logrus.Warnf("error extracting logs in event watcher: %s", extractErr.Error())
 			close(executeQuitChan)
 			return extractErr
 		}
