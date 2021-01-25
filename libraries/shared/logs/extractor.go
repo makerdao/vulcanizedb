@@ -209,6 +209,14 @@ func ChunkRanges(startingBlock, endingBlock, interval int64) ([]map[BlockIdentif
 	return results, nil
 }
 
+func logWarn(description string, err error, header core.Header) {
+	logrus.WithFields(logrus.Fields{
+		"headerId":    header.Id,
+		"headerHash":  header.Hash,
+		"blockNumber": header.BlockNumber,
+	}).Warnf(description, err.Error())
+}
+
 func logError(description string, err error, header core.Header) {
 	logrus.WithFields(logrus.Fields{
 		"headerId":    header.Id,
@@ -242,7 +250,7 @@ func (extractor *LogExtractor) updateCheckedHeaders(config event.TransformerConf
 func (extractor *LogExtractor) fetchAndPersistLogsForHeader(header core.Header) error {
 	logs, fetchLogsErr := extractor.Fetcher.FetchLogs(extractor.Addresses, extractor.Topics, header)
 	if fetchLogsErr != nil {
-		logError("error fetching logs for header: %s", fetchLogsErr, header)
+		logWarn("error fetching logs for header: %s", fetchLogsErr, header)
 		return fmt.Errorf("error fetching logs for block %d: %w", header.BlockNumber, fetchLogsErr)
 	}
 
