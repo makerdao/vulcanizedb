@@ -33,6 +33,7 @@ type MockBlockChain struct {
 	GetTransactionsError               error
 	GetTransactionsPassedHashes        []common.Hash
 	Transactions                       []core.TransactionModel
+	GetHeadersByNumbersErr             error
 	fetchContractDataErr               error
 	fetchContractDataPassedAbi         string
 	fetchContractDataPassedAddress     string
@@ -101,7 +102,7 @@ func (blockChain *MockBlockChain) GetHeadersByNumbers(blockNumbers []int64) ([]c
 		var header = core.Header{BlockNumber: blockNumber}
 		headers = append(headers, header)
 	}
-	return headers, nil
+	return headers, blockChain.GetHeadersByNumbersErr
 }
 
 func (blockChain *MockBlockChain) GetTransactions(transactionHashes []common.Hash) ([]core.TransactionModel, error) {
