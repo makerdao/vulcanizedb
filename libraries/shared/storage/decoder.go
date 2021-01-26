@@ -45,9 +45,13 @@ func Decode(diff types.PersistedDiff, metadata types.ValueMetadata) interface{} 
 	case types.Bytes32:
 		return diff.StorageValue.Hex()
 	case types.PackedSlot:
-		return decodePackedSlot(diff.StorageValue.Bytes(), metadata.PackedTypes)
+		decodedSlotData, err := decodePackedSlot(diff.StorageValue.Bytes(), metadata.PackedTypes)
+		if err != nil {
+			return err
+		}
+		return decodedSlotData
 	default:
-		panic(fmt.Sprintf("can't decode unknown type: %d", metadata.Type))
+		return fmt.Errorf("can't decode unknown type: %d", metadata.Type)
 	}
 }
 
@@ -60,7 +64,7 @@ func decodeAddress(raw []byte) string {
 	return common.BytesToAddress(raw).Hex()
 }
 
-func decodePackedSlot(raw []byte, packedTypes map[int]types.ValueType) map[int]string {
+func decodePackedSlot(raw []byte, packedTypes map[int]types.ValueType) (map[int]string, error) {
 	storageSlotData := raw
 	decodedStorageSlotItems := map[int]string{}
 	numberOfTypes := len(packedTypes)
@@ -72,28 +76,34 @@ func decodePackedSlot(raw []byte, packedTypes map[int]types.ValueType) map[int]s
 		//get item details (type, length, starting index, value bytes)
 		itemType := packedTypes[position]
 		lengthOfItem := getNumberOfBytes(itemType)
+		if lengthOfItem == 0 {
+			return nil, fmt.Errorf("invalid number of bytes at packed position")
+		}
 		itemStartingIndex := lengthOfStorageData - lengthOfItem
 		itemValueBytes := storageSlotData[itemStartingIndex:]
 
 		//decode item's bytes and set in results map
-		decodedValue := decodeIndividualItem(itemValueBytes, itemType)
+		decodedValue, err := decodeIndividualItem(itemValueBytes, itemType)
+		if err != nil {
+			return nil, err
+		}
 		decodedStorageSlotItems[position] = decodedValue
 
 		//pop last item off raw slot data before moving on
 		storageSlotData = storageSlotData[0:itemStartingIndex]
 	}
 
-	return decodedStorageSlotItems
+	return decodedStorageSlotItems, nil
 }
 
-func decodeIndividualItem(itemBytes []byte, valueType types.ValueType) string {
+func decodeIndividualItem(itemBytes []byte, valueType types.ValueType) (string, error) {
 	switch valueType {
 	case types.Uint32, types.Uint48, types.Uint128:
-		return decodeInteger(itemBytes)
+		return decodeInteger(itemBytes), nil
 	case types.Address:
-		return decodeAddress(itemBytes)
+		return decodeAddress(itemBytes), nil
 	default:
-		panic(fmt.Sprintf("can't decode unknown type: %d", valueType))
+		return "", fmt.Errorf("can't decode unknown type: %d", valueType)
 	}
 }
 
@@ -108,6 +118,6 @@ func getNumberOfBytes(valueType types.ValueType) int {
 	case types.Address:
 		return 20
 	default:
-		panic(fmt.Sprintf("ValueType %d not recognized", valueType))
+		return 0
 	}
 }
