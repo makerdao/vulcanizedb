@@ -122,7 +122,7 @@ func (watcher StorageWatcher) Execute() error {
 	}
 
 	for {
-		logrus.Infof("throttling to %v", watcher.minWaitTime)
+		logrus.Debugf("throttling to %v", watcher.minWaitTime)
 		err := watcher.Throttler(watcher.minWaitTime, watcher.transformDiffs)
 		if err != nil {
 			logrus.Errorf("error transforming diffs: %s", err.Error())
