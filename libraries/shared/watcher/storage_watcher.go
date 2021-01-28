@@ -121,8 +121,8 @@ func (watcher StorageWatcher) Execute() error {
 		return fmt.Errorf("error confirming health check: %w", writeErr)
 	}
 
+	logrus.Infof("throttling %s to %v", watcher.StorageWatcherName(), watcher.minWaitTime)
 	for {
-		logrus.Infof("throttling to %v", watcher.minWaitTime)
 		err := watcher.Throttler(watcher.minWaitTime, watcher.transformDiffs)
 		if err != nil {
 			logrus.Errorf("error transforming diffs: %s", err.Error())
