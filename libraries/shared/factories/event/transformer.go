@@ -70,13 +70,13 @@ func (ct ConfiguredTransformer) Execute(logs []core.EventLog) error {
 
 	models, err := ct.Transformer.ToModels(config.ContractAbi, logs, ct.DB)
 	if err != nil {
-		logrus.Errorf("error converting entities to models in %v: %v", transformerName, err)
+		logrus.Warnf("error converting entities to models in %v: %v", transformerName, err)
 		return err
 	}
 
 	err = PersistModels(models, ct.DB)
 	if err != nil {
-		logrus.Errorf("error persisting %v record: %v", transformerName, err)
+		logrus.Warnf("error persisting %v record: %v", transformerName, err)
 		return err
 	}
 

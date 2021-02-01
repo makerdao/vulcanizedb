@@ -122,13 +122,13 @@ func shouldResetEndingBlockToLaterTransformerBlock(currentTransformerBlock int64
 // ExtractLogs fetches and persists watched logs from unchecked headers
 func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) error {
 	if len(extractor.Addresses) < 1 {
-		logrus.Errorf("error extracting logs: %s", ErrNoWatchedAddresses.Error())
+		logrus.Warnf("error extracting logs: %s", ErrNoWatchedAddresses.Error())
 		return fmt.Errorf("error extracting logs: %w", ErrNoWatchedAddresses)
 	}
 
 	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, *extractor.EndingBlock, extractor.getCheckCount(recheckHeaders))
 	if uncheckedHeadersErr != nil {
-		logrus.Errorf("error fetching missing headers: %s", uncheckedHeadersErr)
+		logrus.Warnf("error fetching missing headers: %s", uncheckedHeadersErr)
 		return fmt.Errorf("error getting unchecked headers to check for logs: %w", uncheckedHeadersErr)
 	}
 
@@ -144,7 +144,7 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 
 		markHeaderCheckedErr := extractor.CheckedHeadersRepository.MarkHeaderChecked(header.Id)
 		if markHeaderCheckedErr != nil {
-			logError("error marking header checked: %s", markHeaderCheckedErr, header)
+			logWarn("error marking header checked: %s", markHeaderCheckedErr, header)
 			return markHeaderCheckedErr
 		}
 	}
@@ -209,6 +209,14 @@ func ChunkRanges(startingBlock, endingBlock, interval int64) ([]map[BlockIdentif
 	return results, nil
 }
 
+func logWarn(description string, err error, header core.Header) {
+	logrus.WithFields(logrus.Fields{
+		"headerId":    header.Id,
+		"headerHash":  header.Hash,
+		"blockNumber": header.BlockNumber,
+	}).Warnf(description, err.Error())
+}
+
 func logError(description string, err error, header core.Header) {
 	logrus.WithFields(logrus.Fields{
 		"headerId":    header.Id,
@@ -242,20 +250,20 @@ func (extractor *LogExtractor) updateCheckedHeaders(config event.TransformerConf
 func (extractor *LogExtractor) fetchAndPersistLogsForHeader(header core.Header) error {
 	logs, fetchLogsErr := extractor.Fetcher.FetchLogs(extractor.Addresses, extractor.Topics, header)
 	if fetchLogsErr != nil {
-		logError("error fetching logs for header: %s", fetchLogsErr, header)
+		logWarn("error fetching logs for header: %s", fetchLogsErr, header)
 		return fmt.Errorf("error fetching logs for block %d: %w", header.BlockNumber, fetchLogsErr)
 	}
 
 	if len(logs) > 0 {
 		transactionsSyncErr := extractor.Syncer.SyncTransactions(header.Id, logs)
 		if transactionsSyncErr != nil {
-			logError("error syncing transactions: %s", transactionsSyncErr, header)
+			logWarn("error syncing transactions: %s", transactionsSyncErr, header)
 			return fmt.Errorf("error syncing transactions for block %d: %w", header.BlockNumber, transactionsSyncErr)
 		}
 
 		createLogsErr := extractor.LogRepository.CreateEventLogs(header.Id, logs)
 		if createLogsErr != nil {
-			logError("error persisting logs: %s", createLogsErr, header)
+			logWarn("error persisting logs: %s", createLogsErr, header)
 			return fmt.Errorf("error persisting logs for block %d: %w", header.BlockNumber, createLogsErr)
 		}
 	}
