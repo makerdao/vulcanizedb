@@ -44,8 +44,11 @@ docker push makerdao/vdb-reset-header-check:$TAG
 
 # service deploy
 if [ "$ENVIRONMENT" == "prod" ]; then
-  message DEPLOYING HEADER-SYNC
+  message DEPLOYING HEADER-SYNC IN PROD
   aws ecs update-service --cluster vdb-cluster-$ENVIRONMENT --service vdb-header-sync-$ENVIRONMENT --force-new-deployment --endpoint https://ecs.$PROD_REGION.amazonaws.com --region $PROD_REGION
+
+  message DEPLOYING HEADER-SYNC IN PRIVATE-PROD
+  aws ecs update-service --cluster vdb-cluster-$ENVIRONMENT --service vdb-header-sync-$ENVIRONMENT --force-new-deployment --endpoint https://ecs.$PRIVATE_PROD_REGION.amazonaws.com --region $PRIVATE_PROD_REGION
 
 elif [ "$ENVIRONMENT" == "staging" ]; then
   message DEPLOYING HEADER-SYNC
