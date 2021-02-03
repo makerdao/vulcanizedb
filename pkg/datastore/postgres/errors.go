@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	DbConnectionFailedMsg = "db connection failed"
-	SettingNodeFailedMsg  = "unable to set db node"
-    foreignKeyViolationErrorCode = "23503"
+	DbConnectionFailedMsg        = "db connection failed"
+	SettingNodeFailedMsg         = "unable to set db node"
+    ForeignKeyViolationErrorCode = "23503"
 )
 
 var ErrHeaderDoesNotExist = errors.New("header does not exist")
@@ -42,5 +42,5 @@ func IsForeignKeyViolationErr(err error) bool {
 		return false
 	}
 
-	return pgErr.Code == foreignKeyViolationErrorCode
+	return pgErr.Code == ForeignKeyViolationErrorCode
 }
