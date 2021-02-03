@@ -3,11 +3,14 @@ package postgres
 import (
 	"errors"
 	"fmt"
+
+	"github.com/lib/pq"
 )
 
 const (
 	DbConnectionFailedMsg = "db connection failed"
 	SettingNodeFailedMsg  = "unable to set db node"
+    foreignKeyViolationErrorCode = "23503"
 )
 
 var ErrHeaderDoesNotExist = errors.New("header does not exist")
@@ -32,3 +35,12 @@ func UnwrapErrorRecursively(err error) error {
 	return err
 }
 
+func IsForeignKeyViolationErr(err error) bool {
+	unwrappedErr := UnwrapErrorRecursively(err)
+	pgErr, ok := unwrappedErr.(*pq.Error)
+	if !ok {
+		return false
+	}
+
+	return pgErr.Code == foreignKeyViolationErrorCode
+}
