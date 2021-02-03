@@ -23,3 +23,12 @@ func ErrUnableToSetNode(setErr error) error {
 func formatError(msg, err string) error {
 	return errors.New(fmt.Sprintf("%s: %s", msg, err))
 }
+
+func UnwrapErrorRecursively(err error) error {
+	unwrapped := errors.Unwrap(err)
+	if unwrapped != nil {
+		return UnwrapErrorRecursively(unwrapped)
+	}
+	return err
+}
+
