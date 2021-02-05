@@ -37,14 +37,17 @@ Several VulcanizeDB top-level commands have specific requirements of the Ethereu
 - `backfillStorage` requires an Archive node. Backfilling storage values uses the `eth_getStorageAt` JSON RPC call, which needs access to archived data. The node will need to have been synced from the beginning with `--gcmode "archive"`.
 
  ## Using VulcanizeDB in Light Mode:
- As mentioned above, the full feature set depends on storage diffs to access current and historical state snapshots of Maker domain objects (Ilks, Urns, etc). If you are only interested in accessing raw events logs, it is possible to run VDB against a lighter weight node. When syncing VulcanizeDB without storage diffs enabled, you can remove the storage transformer
- exporters from the config file. Nodes that are considered "lighter weight" include:
+ As mentioned above, the full feature set depends on storage diffs to access current and historical state snapshots of Maker domain objects (Ilks, Urns, etc). If you are only interested in accessing raw and transformed events logs, it is possible to run VDB against a lighter weight node.
+ 
+ ### Nodes that are considered "lighter weight" include:
  - A node using fast sync mode.
  - A non-patched node.
- - A node using the light syncing strategy. While it is technically possible to sync VDB (both headers and transformed
-  log events) with a node running in light mode, this is not recommended. Anecdotally we've seen running VDB against a light
-  Ethereum node may be less reliable because finding suitable peers that are configured to serve light nodes was not
+ - A node using the light syncing strategy. While it is technically possible to sync VDB (both headers and log events) with a node running in light mode, this is not recommended. Anecdotally we've seen running VDB against a light Ethereum node may be less reliable because finding suitable peers that are configured to serve light nodes was not
   consistent and resulted in getting network errors from RPC calls. For more information, see the following:
     - [https://ethereum.stackexchange.com/questions/11014/how-to-run-a-server-for-light-clients](https://ethereum.stackexchange.com/questions/11014/how-to-run-a-server-for-light-clients)
-    - [https://github.com/ethereum/go-ethereum/issues/15454](https://github.com/ethereum/go-ethereum/issues/15454)
+    - [https://github.com/ethere/um/go-ethereum/issues/15454](https://github.com/ethereum/go-ethereum/issues/15454)
 
+### Considerations when running VulcanizeDB against a node that does not emit diffs
+- It is unnecessary to run the `extractDiffs` and `backfillStorage` processes - `headerSync`, `execute` and `backfillEvents` can use a node that does not emit diffs.
+- With storage diffs disabled, the `public.storage_diff` table will be empty, as will any transformed storage diff table or query function that depends on the raw storage diffs. It is advised to either remove these storage-specific tables from the database schema if running a new instance, or at lease to omit them from any API that is being exposed.
+ - Since there will be no raw storage diffs to transform, the storage transformer exporters can be removed from the transformer plugin's config file, as well as the transformerExporter.go file.
