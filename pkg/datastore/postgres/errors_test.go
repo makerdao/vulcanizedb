@@ -9,11 +9,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-
 var _ = Describe("Postgres errors", func() {
 	var FKViolationErr = &pq.Error{
-		Severity:         "ERROR",
-		Code:             "23503",
+		Severity: "ERROR",
+		Code:     "23503",
 	}
 
 	Describe("UnwrapErrorRecursively", func() {
@@ -64,7 +63,7 @@ var _ = Describe("Postgres errors", func() {
 })
 
 type TestError struct{}
+
 func (e TestError) Error() string {
 	return "Test Error"
 }
-

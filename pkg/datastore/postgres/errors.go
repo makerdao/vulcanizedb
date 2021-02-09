@@ -10,7 +10,7 @@ import (
 const (
 	DbConnectionFailedMsg        = "db connection failed"
 	SettingNodeFailedMsg         = "unable to set db node"
-    ForeignKeyViolationErrorCode = "23503"
+	ForeignKeyViolationErrorCode = "23503"
 )
 
 var ErrHeaderDoesNotExist = errors.New("header does not exist")
