@@ -3,13 +3,6 @@ It is possible to sync and run an Ethereum node in several different ways based 
 the pruning configuration. This document aims to explain those differences, and what is required for use with 
 VulcanizeDB.
 
-VulcanizeDB currently depends on a [custom Geth implementation](https://github.com/makerdao/go-ethereum/tree/allow-state-diff-subscription).
-The key piece that this implementation adds is a way to subscribe to storage diffs (the change in contract storage from
-block to block). As a block's transactions are applied, the storage changes are identified and emitted to subscribers. It
-is also possible to specify contracts to watch when establishing a subscription, so that only diffs from those given
-contracts will be sent to subscribers. These storage diffs can be used to build up past and current state of domain
-objects across smart contracts.
-
 _The following descriptions are paraphrased from the [Ethereum](https://ethereum.org/en/developers/docs/nodes-and-clients)
 and [Geth](https://geth.ethereum.org/docs/faq) docs._
 ## Types of Nodes:
@@ -29,26 +22,32 @@ the state in separate processes, and verifies both data sets. This sync mode doe
  incrementally by executing every block.
 
 ## VulcanizeDB Requirements:
-To utilize the full feature set of VulcanizeDB transformers, a patched Geth node must be used to get storage diffs. The following
-settings are required when running that node:
-- Either a Full or Archive mode (i.e. prunning/garbage collection can either be turned on or off). It is strongly
-recommended to use Full mode, as the size of the data is much less than an Archive node. To set the garbage collection
-mode, pass `--gcmode <"full" or "archive">` when starting the geth node. "full" is the default value.
-- The Full sync strategy - the custom Geth client streams storage diffs as the node is executing each block. Other sync
- strategies don't replay individual transactions as they're syncing, and therefore do not emit storage diffs.
+VulcanizeDB currently depends on a [custom Geth implementation](https://github.com/makerdao/go-ethereum/tree/allow-state-diff-subscription) to access it's full feature set.
+This custom implementation was developed because we found that fetching contract storage data via the JSON RPC `eth_getStorageAt` method was too slow when syncing data for a large set of contracts such as the Multi-Collateral Dai system contracts. When using `eth_getStorageAt` to sync storage data, an RPC call would need to be made for every storage slot on every contract of interest, for every block. As an alternative to this costly operation, we opted to gather storage diffs (the change in contract storage from block to block) while syncing a custom geth node.
+
+The key change that this implementation makes is a way to subscribe to storage diffs. As a block's transactions are applied, the storage changes are identified and emitted to subscribers. It is also possible to specify contracts to watch when establishing a subscription, so that only diffs from those given contracts will be sent to subscribers. These storage diffs can be used to build up past and current state of domain objects across smart contracts.
+
+### VulcanizeDB Command Requirements:
+
+Several VulcanizeDB top-level commands have specific requirements of the Ethereum node that they connect to, which are detailed below.
+- `headerSync`, `execute` and `backfillEvents` are able to connect to any Ethereum node, provided it is not rate limited.
+- `extractDiffs` requires the custom Geth patch. The following settings are required when running that node:
+    - `gcmode`: The garbage collection mode determines if the Ethereum node prunes data as it is syncing with the chain. Either a `full` or `archive` node is acceptable for VulcanizeDB, though it is strongly recommended to use a `full` node, as the size of the data is much less than an `archive` node. When starting the Geth node, pass the `--gcmode <"full" or "archive">` flag - "full" is the default value.
+    - `syncmode`: The `full` sync strategy is required since the custom Geth client streams storage diffs as the node is executing each block. Other syncing strategies do not replay individual transactions as they're syncing, and therefore do not emit storage diffs. The default value is "fast", so it is important to pass the `--syncmode "full"` flag.
+- `backfillStorage` requires an Archive node. Backfilling storage values uses the `eth_getStorageAt` JSON RPC call, which needs access to archived data. The node will need to have been synced from the beginning with `--gcmode "archive"`.
 
  ## Using VulcanizeDB in Light Mode:
- As mentioned above, the full feature set depends on storage diffs to access current and historical state snapshots
- of Maker domain objects (Ilks, Urns, etc). If you are only interested in accessing raw events logs, it is possible to run VDB
- against a lighter weight node. When syncing VulcanizeDB without storage diffs enabled, you can remove the storage transformer
- exporters from the config file. Nodes that are consider "lighter weight" include:
+ As mentioned above, the full feature set depends on storage diffs to access current and historical state snapshots of Maker domain objects (Ilks, Urns, etc). If you are only interested in accessing raw and transformed events logs, it is possible to run VDB against a lighter weight node.
+ 
+ ### Nodes that are considered "lighter weight" include:
  - A node using fast sync mode.
  - A non-patched node.
- - A node using the light syncing strategy. While it is technically possible to sync VDB (both headers and transformed
-  log events) with a node running in light mode, this is not recommended. Anecdotally we've seen running VDB against a light
-  Ethereum node may be less reliable because finding suitable peers that are configured to serve light nodes was not
+ - A node using the light syncing strategy. While it is technically possible to sync VDB (both headers and log events) with a node running in light mode, this is not recommended. Anecdotally we've seen running VDB against a light Ethereum node may be less reliable because finding suitable peers that are configured to serve light nodes was not
   consistent and resulted in getting network errors from RPC calls. For more information, see the following:
     - [https://ethereum.stackexchange.com/questions/11014/how-to-run-a-server-for-light-clients](https://ethereum.stackexchange.com/questions/11014/how-to-run-a-server-for-light-clients)
-    - [https://github.com/ethereum/go-ethereum/issues/15454](https://github.com/ethereum/go-ethereum/issues/15454)
+    - [https://github.com/ethere/um/go-ethereum/issues/15454](https://github.com/ethereum/go-ethereum/issues/15454)
 
-
+### Considerations when running VulcanizeDB against a node that does not emit diffs
+- It is unnecessary to run the `extractDiffs` and `backfillStorage` processes - `headerSync`, `execute` and `backfillEvents` can use a node that does not emit diffs.
+- With storage diffs disabled, the `public.storage_diff` table will be empty, as will any transformed storage diff table or query function that depends on the raw storage diffs. It is advised to either remove these storage-specific tables from the database schema if running a new instance, or at lease to omit them from any API that is being exposed.
+ - Since there will be no raw storage diffs to transform, the storage transformer exporters can be removed from the transformer plugin's config file, as well as the transformerExporter.go file.
