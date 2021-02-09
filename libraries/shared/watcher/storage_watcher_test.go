@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/lib/pq"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -229,10 +230,8 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 			diffWithoutHeader := types.PersistedDiff{
 				RawDiff: types.RawDiff{
 					Address:     contractAddress,
-					BlockHash:   test_data.FakeHash(),
 					BlockHeight: rand.Int(),
 				},
-				ID: rand.Int63(),
 			}
 			setDiffsToReturn(storageWatcher.DiffStatus, mockDiffsRepository, []types.PersistedDiff{diffWithoutHeader})
 			setGetDiffsErrors(storageWatcher.DiffStatus, mockDiffsRepository, []error{nil, fakes.FakeError})
@@ -241,8 +240,66 @@ func SharedExecuteBehavior(input *ExecuteInput) {
 			err := storageWatcher.Execute()
 
 			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(MatchError(postgres.ErrHeaderDoesNotExist))
 			Expect(err).To(MatchError(fakes.FakeError))
-			Expect(mockDiffsRepository.MarkTransformedPassedID).NotTo(Equal(diffWithoutHeader.ID))
+		})
+
+		It("does not return ErrKeyNotFound if a storage diff key isn't found", func() {
+			diff := types.PersistedDiff{
+				RawDiff: types.RawDiff{
+					Address:     contractAddress,
+					BlockHeight: rand.Int(),
+				},
+			}
+			mockTransformer.ExecuteErr = types.ErrKeyNotFound
+			setDiffsToReturn(storageWatcher.DiffStatus, mockDiffsRepository, []types.PersistedDiff{diff})
+			setGetDiffsErrors(storageWatcher.DiffStatus, mockDiffsRepository, []error{nil, fakes.FakeError})
+
+			err := storageWatcher.Execute()
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(MatchError(types.ErrKeyNotFound))
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+
+		It("does not return ErrNoRows error if there are no diffs within the given block range", func() {
+			diff := types.PersistedDiff{
+				RawDiff: types.RawDiff{
+					Address:     contractAddress,
+					BlockHeight: rand.Int(),
+				},
+			}
+			mockDiffsRepository.GetFirstDiffIDErr = sql.ErrNoRows
+			setDiffsToReturn(storageWatcher.DiffStatus, mockDiffsRepository, []types.PersistedDiff{diff})
+			setGetDiffsErrors(storageWatcher.DiffStatus, mockDiffsRepository, []error{nil, fakes.FakeError})
+			err := storageWatcher.Execute()
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+
+		It("does not return foreign_key_violation errors", func() {
+			// this sort of error often occurs when we're trying to associated a transformed diff to a header that has since been deleted due to a reorg
+			diff := types.PersistedDiff{
+				RawDiff: types.RawDiff{
+					Address:     contractAddress,
+					BlockHeight: rand.Int(),
+				},
+			}
+			fkViolationErr := pq.Error{
+				Severity: "ERROR",
+				Code:     postgres.ForeignKeyViolationErrorCode,
+			}
+
+			mockTransformer.ExecuteErr = &fkViolationErr
+			setDiffsToReturn(storageWatcher.DiffStatus, mockDiffsRepository, []types.PersistedDiff{diff})
+			setGetDiffsErrors(storageWatcher.DiffStatus, mockDiffsRepository, []error{nil, fakes.FakeError})
+
+			err := storageWatcher.Execute()
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(MatchError(fkViolationErr))
+			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
 		Describe("When the watcher is configured to skip old diffs", func() {

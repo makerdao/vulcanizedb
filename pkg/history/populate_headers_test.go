@@ -104,7 +104,7 @@ var _ = Describe("Populating headers", func() {
 	})
 
 	Describe("RetrieveAndUpdateHeaders", func() {
-		It("returns an error if getting headers from the blockchain fails", func(){
+		It("returns an error if getting headers from the blockchain fails", func() {
 			blockChain := fakes.NewMockBlockChain()
 			blockChain.GetHeadersByNumbersErr = fakes.FakeError
 
