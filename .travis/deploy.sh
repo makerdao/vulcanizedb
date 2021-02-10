@@ -40,10 +40,12 @@ echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USER" --password-stdi
 
 # publish
 message PUSHING HEADER-SYNC
-docker image push --all-tags makerdao/vdb-headersync
+docker push makerdao/vdb-headersync:$TAG
+docker push makerdao/vdb-headersync:$IMMUTABLE_TAG
 
 message PUSHING RESET-HEADER-CHECK
-docker image push --all-tags makerdao/vdb-reset-header-check
+docker push makerdao/vdb-reset-header-check:$TAG
+docker push makerdao/vdb-reset-header-check:$IMMUTABLE_TAG
 
 # service deploy
 if [ "$ENVIRONMENT" == "prod" ]; then
