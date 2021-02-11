@@ -26,11 +26,14 @@ if [ -z "$ENVIRONMENT" ]; then
 fi
 
 # build images
+COMMIT_HASH=${TRAVIS_COMMIT::7}
+IMMUTABLE_TAG=$TRAVIS_BUILD_NUMBER-$COMMIT_HASH
+
 message BUILDING HEADER-SYNC
-docker build -f dockerfiles/header_sync/Dockerfile . -t makerdao/vdb-headersync:$TAG
+docker build -f dockerfiles/header_sync/Dockerfile . -t makerdao/vdb-headersync:$TAG -t makerdao/vdb-headersync:$IMMUTABLE_TAG
 
 message BUILDING RESET-HEADER-CHECK
-docker build -f dockerfiles/reset_header_check_count/Dockerfile . -t makerdao/vdb-reset-header-check:$TAG
+docker build -f dockerfiles/reset_header_check_count/Dockerfile . -t makerdao/vdb-reset-header-check:$TAG -t makerdao/vdb-reset-header-check:$IMMUTABLE_TAG
 
 message LOGGING INTO DOCKERHUB
 echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USER" --password-stdin
@@ -38,9 +41,11 @@ echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USER" --password-stdi
 # publish
 message PUSHING HEADER-SYNC
 docker push makerdao/vdb-headersync:$TAG
+docker push makerdao/vdb-headersync:$IMMUTABLE_TAG
 
 message PUSHING RESET-HEADER-CHECK
 docker push makerdao/vdb-reset-header-check:$TAG
+docker push makerdao/vdb-reset-header-check:$IMMUTABLE_TAG
 
 # service deploy
 if [ "$ENVIRONMENT" == "prod" ]; then
