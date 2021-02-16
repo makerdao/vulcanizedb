@@ -27,6 +27,17 @@ import (
 )
 
 var _ = Describe("Storage decoder", func() {
+	It("returns an error if metadata is unrecognized", func() {
+		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000000666")
+		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
+		unrecognizedMetadata := types.ValueMetadata{Name: "unrecognized"}
+
+		err := storage.Decode(diff, unrecognizedMetadata)
+
+		Expect(err).Should(Equal("1638"))
+
+	})
+
 	It("decodes uint256", func() {
 		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000000539")
 		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
