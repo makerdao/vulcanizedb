@@ -22,7 +22,15 @@ deploy:
   on:
     branch: beta
 - provider: script
+  script: bash ./.travis/deploy.sh qa
+  on:
+    branch: develop
+- provider: script
   script: bash ./.travis/deploy.sh prod
+  on:
+    branch: prod
+- provider: script
+  script: bash ./.travis/deploy.sh private-prod
   on:
     branch: prod
 notifications:
