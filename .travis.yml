@@ -1,4 +1,4 @@
-dist: trusty
+dist: bionic
 language: go
 go:
 - 1.15
@@ -6,12 +6,15 @@ services:
 - postgresql
 - docker
 addons:
-  postgresql: '11.6'
+  postgresql: '11'
+apt:
+  packages:
+    - postgresql-11
+    - postgresql-client-11
 go_import_path: github.com/makerdao/vulcanizedb
 before_install:
 - make installtools
-- bash ./scripts/install-postgres-11.sh
-- sudo apt-get update && sudo apt-get install python3-pip -y
+- sudo apt-get update && sudo apt-get install python3-pip python3-setuptools -y
 - sudo pip3 install awscli
 script:
 - env GO111MODULE=on make test
@@ -22,7 +25,15 @@ deploy:
   on:
     branch: beta
 - provider: script
+  script: bash ./.travis/deploy.sh qa
+  on:
+    branch: develop
+- provider: script
   script: bash ./.travis/deploy.sh prod
+  on:
+    branch: prod
+- provider: script
+  script: bash ./.travis/deploy.sh private-prod
   on:
     branch: prod
 notifications:
