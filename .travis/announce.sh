@@ -19,9 +19,11 @@ if [ "$ENVIRONMENT" == "prod" ]; then
 TAG=latest
 elif [ "$ENVIRONMENT" == "staging" ]; then
 TAG=staging
+elif [ "$ENVIRONMENT" == "qa" ]; then
+TAG=develop
 else
    message UNKNOWN ENVIRONMENT
-   echo 'Allowed values for environment are "staging" or "prod"'
+   echo 'Allowed values for environment are "staging", "qa", or "prod"'
    exit 1
 fi
 
