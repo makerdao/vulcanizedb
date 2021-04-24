@@ -42,12 +42,14 @@ var _ = Describe("Log extractor", func() {
 	BeforeEach(func() {
 		checkedHeadersRepository = &fakes.MockCheckedHeadersRepository{}
 		checkedLogsRepository = &fakes.MockCheckedLogsRepository{}
+		throttler := logs.NewThrottler(&logs.StandardTimer{})
 		extractor = &logs.LogExtractor{
 			CheckedHeadersRepository: checkedHeadersRepository,
 			CheckedLogsRepository:    checkedLogsRepository,
 			Fetcher:                  &mocks.MockLogFetcher{},
 			LogRepository:            &fakes.MockEventLogRepository{},
 			Syncer:                   &fakes.MockTransactionSyncer{},
+			Throttler:                throttler.Throttle,
 			RecheckHeaderCap:         constants.RecheckHeaderCap,
 		}
 	})
