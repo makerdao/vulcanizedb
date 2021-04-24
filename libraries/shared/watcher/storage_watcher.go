@@ -30,6 +30,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/fs"
+	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,7 +54,7 @@ type StorageWatcher struct {
 	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
 	StatusWriter              fs.StatusWriter
 	DiffStatus                DiffStatusToWatch
-	Throttler                 ThrottlerFunc
+	Throttler                 utils.ThrottlerFunc
 	minWaitTime               time.Duration
 }
 
@@ -81,7 +82,7 @@ func createStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWrit
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Address]storage2.ITransformer)
-	throttler := NewThrottler(&StandardTimer{})
+	throttler := utils.NewThrottler(&utils.StandardTimer{})
 
 	return StorageWatcher{
 		db:                        db,
