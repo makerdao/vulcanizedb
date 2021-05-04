@@ -30,6 +30,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -60,13 +61,13 @@ type LogExtractor struct {
 	EndingBlock              *int64
 	Syncer                   transactions.ITransactionsSyncer
 	Topics                   []common.Hash
-	Throttler                ThrottlerFunc
+	Throttler                utils.ThrottlerFuncWithArg
 	minWaitTime              time.Duration
 	RecheckHeaderCap         int64
 }
 
 func NewLogExtractor(db *postgres.DB, bc core.BlockChain, chr datastore.CheckedHeadersRepository) *LogExtractor {
-	throttler := NewThrottler(&StandardTimer{})
+	throttler := utils.NewThrottlerWithArgs(&utils.StandardTimer{})
 	return &LogExtractor{
 		CheckedHeadersRepository: chr,
 		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),

@@ -1,9 +1,16 @@
 package utils
 
-import "time"
+import (
+	"time"
+
+	"github.com/makerdao/vulcanizedb/pkg/core"
+)
 
 type Callback func() error
+type CallbackWithArg func(header core.Header) error
+
 type ThrottlerFunc func(time.Duration, Callback) error
+type ThrottlerFuncWithArg func(time.Duration, CallbackWithArg, core.Header) error
 
 type Timer interface {
 	WaitFor(sleep time.Duration)
@@ -32,6 +39,10 @@ type Throttler struct {
 	timer Timer
 }
 
+type ThrottlerWithArgs struct {
+	timer Timer
+}
+
 func NewThrottler(timer Timer) Throttler {
 	return Throttler{
 		timer: timer,
@@ -41,6 +52,19 @@ func NewThrottler(timer Timer) Throttler {
 func (throttler Throttler) Throttle(minTime time.Duration, f Callback) error {
 	throttler.timer.Start()
 	err := f()
+	throttler.timer.WaitFor(minTime - throttler.timer.ElapsedTime())
+	return err
+}
+
+func NewThrottlerWithArgs(timer Timer) ThrottlerWithArgs {
+	return ThrottlerWithArgs{
+		timer: timer,
+	}
+}
+
+func (throttler ThrottlerWithArgs) Throttle(minTime time.Duration, f CallbackWithArg, header core.Header) error {
+	throttler.timer.Start()
+	err := f(header)
 	throttler.timer.WaitFor(minTime - throttler.timer.ElapsedTime())
 	return err
 }
