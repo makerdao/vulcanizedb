@@ -3,6 +3,7 @@ module github.com/makerdao/vulcanizedb
 go 1.15
 
 require (
+	github.com/ClickHouse/clickhouse-go v1.4.5 // indirect
 	github.com/certifi/gocertifi v0.0.0-20200922220541-2c3bb06c6054 // indirect
 	github.com/dave/jennifer v1.3.0
 	github.com/ethereum/go-ethereum v1.9.22

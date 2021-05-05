@@ -27,6 +27,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
+	"github.com/makerdao/vulcanizedb/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -42,12 +43,14 @@ var _ = Describe("Log extractor", func() {
 	BeforeEach(func() {
 		checkedHeadersRepository = &fakes.MockCheckedHeadersRepository{}
 		checkedLogsRepository = &fakes.MockCheckedLogsRepository{}
+		throttler := utils.NewThrottlerWithArgs(&utils.StandardTimer{})
 		extractor = &logs.LogExtractor{
 			CheckedHeadersRepository: checkedHeadersRepository,
 			CheckedLogsRepository:    checkedLogsRepository,
 			Fetcher:                  &mocks.MockLogFetcher{},
 			LogRepository:            &fakes.MockEventLogRepository{},
 			Syncer:                   &fakes.MockTransactionSyncer{},
+			Throttler:                throttler.Throttle,
 			RecheckHeaderCap:         constants.RecheckHeaderCap,
 		}
 	})
