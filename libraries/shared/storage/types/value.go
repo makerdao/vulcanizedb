@@ -25,6 +25,8 @@ const (
 	Uint8
 	Uint32
 	Uint48
+	Uint64
+	Uint192
 	Uint128
 	Bytes32
 	Address
