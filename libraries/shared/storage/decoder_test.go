@@ -214,5 +214,26 @@ var _ = Describe("Storage decoder", func() {
 			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()))
 			Expect(decodedValues[2]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()))
 		})
+
+		It("decodes a uint64 + uint192", func() {
+			packedStorageHex := "00000000348c771b1de11359f9ee9b8d0c93800000000000" +
+				"00038d7ea4c68000"
+			packedStorage := common.HexToHash(packedStorageHex)
+			diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: packedStorage}}
+			packedTypes := map[int]types.ValueType{}
+			packedTypes[0] = types.Uint64
+			packedTypes[1] = types.Uint192
+
+			metadata := types.ValueMetadata{
+				Type:        types.PackedSlot,
+				PackedTypes: packedTypes,
+			}
+
+			result := storage.Decode(diff, metadata)
+			decodedValues := result.(map[int]string)
+
+			Expect(decodedValues[0]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("38D7EA4C68000").Bytes()).String()))
+			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("348C771B1DE11359F9EE9B8D0C93800000000000").Bytes()).String()))
+		})
 	})
 })
