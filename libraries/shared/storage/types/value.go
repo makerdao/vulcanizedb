@@ -26,6 +26,7 @@ const (
 	Uint32
 	Uint48
 	Uint64
+	Uint96
 	Uint192
 	Uint128
 	Bytes32
