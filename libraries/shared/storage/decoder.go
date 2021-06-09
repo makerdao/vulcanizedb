@@ -38,7 +38,13 @@ func Decode(diff types.PersistedDiff, metadata types.ValueMetadata) interface{} 
 		return decodeInteger(diff.StorageValue.Bytes())
 	case types.Uint48:
 		return decodeInteger(diff.StorageValue.Bytes())
+	case types.Uint64:
+		return decodeInteger(diff.StorageValue.Bytes())
+	case types.Uint96:
+		return decodeInteger(diff.StorageValue.Bytes())
 	case types.Uint128:
+		return decodeInteger(diff.StorageValue.Bytes())
+	case types.Uint192:
 		return decodeInteger(diff.StorageValue.Bytes())
 	case types.Address:
 		return decodeAddress(diff.StorageValue.Bytes())
@@ -98,7 +104,7 @@ func decodePackedSlot(raw []byte, packedTypes map[int]types.ValueType) (map[int]
 
 func decodeIndividualItem(itemBytes []byte, valueType types.ValueType) (string, error) {
 	switch valueType {
-	case types.Uint32, types.Uint48, types.Uint128:
+	case types.Uint32, types.Uint48, types.Uint64, types.Uint128, types.Uint192:
 		return decodeInteger(itemBytes), nil
 	case types.Address:
 		return decodeAddress(itemBytes), nil
@@ -113,8 +119,12 @@ func getNumberOfBytes(valueType types.ValueType) int {
 		return 32 / bitsPerByte
 	case types.Uint48:
 		return 48 / bitsPerByte
+	case types.Uint64:
+		return 64 / bitsPerByte
 	case types.Uint128:
 		return 128 / bitsPerByte
+	case types.Uint192:
+		return 192 / bitsPerByte
 	case types.Address:
 		return 20
 	default:

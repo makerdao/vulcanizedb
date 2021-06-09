@@ -20,7 +20,7 @@ var _ = Describe("Storage value metadata getter", func() {
 		Expect(types.GetValueMetadata(metadataName, metadataKeys, metadataType)).To(Equal(expectedMetadata))
 	})
 
-	Describe("metadata for a packed storaged slot", func() {
+	Describe("metadata for a packed storage slot", func() {
 		It("returns metadata for multiple storage variables", func() {
 			metadataName := "fake_name"
 			metadataKeys := map[types.Key]string{"key": "value"}
