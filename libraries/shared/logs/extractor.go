@@ -19,6 +19,7 @@ package logs
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
@@ -29,6 +30,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -59,10 +61,13 @@ type LogExtractor struct {
 	EndingBlock              *int64
 	Syncer                   transactions.ITransactionsSyncer
 	Topics                   []common.Hash
+	Throttler                utils.ThrottlerFuncWithArg
+	minWaitTime              time.Duration
 	RecheckHeaderCap         int64
 }
 
 func NewLogExtractor(db *postgres.DB, bc core.BlockChain, chr datastore.CheckedHeadersRepository) *LogExtractor {
+	throttler := utils.NewThrottlerWithArgs(&utils.StandardTimer{})
 	return &LogExtractor{
 		CheckedHeadersRepository: chr,
 		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
@@ -70,6 +75,7 @@ func NewLogExtractor(db *postgres.DB, bc core.BlockChain, chr datastore.CheckedH
 		HeaderRepository:         repositories.NewHeaderRepository(db),
 		LogRepository:            repositories.NewEventLogRepository(db),
 		Syncer:                   transactions.NewTransactionsSyncer(db, bc),
+		Throttler:                throttler.Throttle,
 		RecheckHeaderCap:         constants.RecheckHeaderCap,
 	}
 }
@@ -172,7 +178,7 @@ func (extractor LogExtractor) BackFillLogs(endingBlock int64) error {
 		}
 
 		for _, header := range headers {
-			err := extractor.fetchAndPersistLogsForHeader(header)
+			err := extractor.Throttler(extractor.minWaitTime, extractor.fetchAndPersistLogsForHeader, header)
 			if err != nil {
 				return fmt.Errorf("error fetching and persisting logs for header with id %d: %w", header.Id, err)
 			}

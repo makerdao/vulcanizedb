@@ -1,10 +1,10 @@
-package watcher_test
+package utils_test
 
 import (
 	"errors"
 	"time"
 
-	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
+	"github.com/makerdao/vulcanizedb/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -42,7 +42,7 @@ var _ = Describe("Throttler", func() {
 	It("Passes through to the function passed in - and returns its error", func() {
 		expectedError := errors.New("Test Error")
 		mockTimer := MockTimer{}
-		throttler := watcher.NewThrottler(&mockTimer)
+		throttler := utils.NewThrottler(&mockTimer)
 		called := false
 		actualError := throttler.Throttle(0, func() error {
 			called = true
@@ -55,7 +55,7 @@ var _ = Describe("Throttler", func() {
 
 	It("Sleeps for the minimumTime - elapsedTime using the Timer", func() {
 		mockTimer := MockTimer{elapsedTime: 10}
-		throttler := watcher.NewThrottler(&mockTimer)
+		throttler := utils.NewThrottler(&mockTimer)
 
 		throttler.Throttle(30, func() error { return nil })
 
@@ -64,7 +64,7 @@ var _ = Describe("Throttler", func() {
 
 	It("requires calling Start before the callback, and WaitFor after", func() {
 		mockTimer := MockTimer{elapsedTime: 10}
-		throttler := watcher.NewThrottler(&mockTimer)
+		throttler := utils.NewThrottler(&mockTimer)
 
 		throttler.Throttle(30, func() error {
 			Expect(mockTimer.Started()).To(BeTrue())

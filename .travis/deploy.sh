@@ -11,17 +11,26 @@ function message() {
 }
 
 ENVIRONMENT=$1
+#--------------------------
+# INIT
+#--------------------------
 if [ "$ENVIRONMENT" == "prod" ]; then
-TAG=latest
+    TAG=latest
+    REGION=$PROD_REGION
+elif [ "$ENVIRONMENT" == "private-prod" ]; then
+    ENVIRONMENT="prod"
+    TAG=latest
+    REGION=$PRIVATE_PROD_REGION
 elif [ "$ENVIRONMENT" == "staging" ]; then
-TAG=staging
+    TAG=staging
+    REGION=$STAGING_REGION
+elif [ "$ENVIRONMENT" == "qa" ]; then
+    TAG=develop
+    REGION=$QA_REGION
 else
-   message UNKNOWN ENVIRONMENT
-fi
-
-if [ -z "$ENVIRONMENT" ]; then
-    echo 'You must specifiy an environment (bash deploy.sh <ENVIRONMENT>).'
-    echo 'Allowed values are "staging" or "prod"'
+    message UNKNOWN ENVIRONMENT
+    echo 'You must specify an environment (bash deploy.sh <ENVIRONMENT>).'
+    echo 'Allowed values are "staging", "qa", "private-prod" or "prod"'
     exit 1
 fi
 
@@ -48,19 +57,8 @@ docker push makerdao/vdb-reset-header-check:$TAG
 docker push makerdao/vdb-reset-header-check:$IMMUTABLE_TAG
 
 # service deploy
-if [ "$ENVIRONMENT" == "prod" ]; then
-  message DEPLOYING HEADER-SYNC IN PROD
-  aws ecs update-service --cluster vdb-cluster-$ENVIRONMENT --service vdb-header-sync-$ENVIRONMENT --force-new-deployment --endpoint https://ecs.$PROD_REGION.amazonaws.com --region $PROD_REGION
-
-  message DEPLOYING HEADER-SYNC IN PRIVATE-PROD
-  aws ecs update-service --cluster vdb-cluster-$ENVIRONMENT --service vdb-header-sync-$ENVIRONMENT --force-new-deployment --endpoint https://ecs.$PRIVATE_PROD_REGION.amazonaws.com --region $PRIVATE_PROD_REGION
-
-elif [ "$ENVIRONMENT" == "staging" ]; then
-  message DEPLOYING HEADER-SYNC
-  aws ecs update-service --cluster vdb-cluster-$ENVIRONMENT --service vdb-header-sync-$ENVIRONMENT --force-new-deployment --endpoint https://ecs.$STAGING_REGION.amazonaws.com --region $STAGING_REGION
-else
-   message UNKNOWN ENVIRONMENT
-fi
+message DEPLOYING HEADER-SYNC TO $ENVIRONMENT IN $REGION
+aws ecs update-service --cluster vdb-cluster-$ENVIRONMENT --service vdb-header-sync-$ENVIRONMENT --force-new-deployment --endpoint https://ecs.$REGION.amazonaws.com --region $REGION
 
 # announce deploy
 .travis/announce.sh $ENVIRONMENT vdb-header-sync
